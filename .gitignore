@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets and local configuration — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Logs / OS / editor
+*.log
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local data and uploads (patient data must never be committed)
+/data/
+/uploads/
+*.dump
+*.sql.gz
+e2e/test-results/
+e2e/playwright-report/

@@ -11,7 +11,17 @@ This directory is the working source of truth for product requirements, user wor
 - [06 Imaging and integrations](06-IMAGING-AND-INTEGRATIONS.md)
 - [07 Migration, deployment and testing](07-MIGRATION-DEPLOYMENT-AND-TESTING.md)
 - [08 Roadmap, acceptance and open questions](08-ROADMAP-ACCEPTANCE-AND-OPEN-QUESTIONS.md)
-- [Architecture decision record](decisions/ADR-0001-TECHNOLOGY-AND-ARCHITECTURE.md)
+- [09 Local development](09-LOCAL-DEVELOPMENT.md)
+- [10 Environment variables](10-ENVIRONMENT-VARIABLES.md)
+- [11 API conventions](11-API-CONVENTIONS.md)
+- [12 Database and migrations](12-DATABASE-AND-MIGRATIONS.md)
+- [13 Security architecture (as implemented)](13-SECURITY-ARCHITECTURE.md)
+- [14 Testing and quality](14-TESTING-AND-QUALITY.md)
+- [15 Implementation status and outstanding decisions](15-IMPLEMENTATION-STATUS.md)
+- [16 Data migration tooling](16-MIGRATION-TOOLING.md)
+- [17 Backup, restore and operations](17-BACKUP-RESTORE-AND-OPERATIONS.md)
+- [ADR-0001 Technology and architecture](decisions/ADR-0001-TECHNOLOGY-AND-ARCHITECTURE.md)
+- [ADR-0002 Foundation implementation decisions](decisions/ADR-0002-FOUNDATION-IMPLEMENTATION.md)
 
 ## Status language
 **Confirmed direction** means explicitly established project direction. **Proposed** means a recommended design to validate. **To confirm** means a client/vendor/legal decision is outstanding. **Implemented** means code exists and has been verified. A documented requirement is not proof of implementation.

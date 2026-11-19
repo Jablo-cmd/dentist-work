@@ -1,0 +1,20 @@
+# Local development PostgreSQL only. Credentials here are throwaway, local-only values
+# for a database that holds synthetic data. Never reuse them anywhere else.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dpms
+      POSTGRES_PASSWORD: dpms_local_dev_only
+      POSTGRES_DB: dpms
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - dpms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dpms -d dpms']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  dpms_pgdata:

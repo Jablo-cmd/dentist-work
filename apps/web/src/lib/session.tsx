@@ -1,0 +1,101 @@
+'use client';
+
+import {
+  currentUserSchema,
+  loginResponseSchema,
+  loginSuccessSchema,
+  type CurrentUser,
+  type LoginRequest,
+} from '@dpms/contracts';
+import { useRouter } from 'next/navigation';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { z } from 'zod';
+import { ApiRequestError, apiFetch } from './api';
+
+type SessionState =
+  { status: 'loading' } | { status: 'anonymous' } | { status: 'authenticated'; user: CurrentUser };
+interface SessionApi {
+  state: SessionState;
+  login: (input: LoginRequest) => Promise<{ mfaChallenge?: string }>;
+  verifyMfa: (body: { challenge: string; code?: string; recoveryCode?: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  /** Re-reads the current user from the API (e.g. after a password change). */
+  refresh: () => Promise<void>;
+}
+const Ctx = createContext<SessionApi | null>(null);
+const meSchema = z.object({ user: currentUserSchema });
+
+/**
+ * Holds the signed-in user for UI purposes only. Authorisation is enforced by the API on every
+ * request; permissions here merely decide what to render.
+ */
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<SessionState>({ status: 'loading' });
+  const router = useRouter();
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    apiFetch('/auth/me', meSchema, { signal: ctrl.signal }).then(
+      ({ user }) => setState({ status: 'authenticated', user }),
+      (e: unknown) => {
+        if (ctrl.signal.aborted) return;
+        if (e instanceof ApiRequestError && e.status === 401) setState({ status: 'anonymous' });
+        else setState({ status: 'anonymous' });
+      },
+    );
+    return () => ctrl.abort();
+  }, []);
+
+  /** Returns an MFA challenge when a second factor is required, otherwise signs in. */
+  const login = useCallback(async (input: LoginRequest): Promise<{ mfaChallenge?: string }> => {
+    const res = await apiFetch('/auth/login', loginResponseSchema, { method: 'POST', body: input });
+    if ('mfaRequired' in res) return { mfaChallenge: res.challenge };
+    setState({ status: 'authenticated', user: res.user });
+    return {};
+  }, []);
+
+  const verifyMfa = useCallback(
+    async (body: { challenge: string; code?: string; recoveryCode?: string }) => {
+      const { user } = await apiFetch('/auth/mfa/verify', loginSuccessSchema, {
+        method: 'POST',
+        body,
+      });
+      setState({ status: 'authenticated', user });
+    },
+    [],
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch('/auth/logout', null, { method: 'POST' });
+    } finally {
+      setState({ status: 'anonymous' });
+      router.replace('/login');
+    }
+  }, [router]);
+
+  const refresh = useCallback(async () => {
+    const { user } = await apiFetch('/auth/me', meSchema);
+    setState({ status: 'authenticated', user });
+  }, []);
+
+  const value = useMemo(
+    () => ({ state, login, verifyMfa, logout, refresh }),
+    [state, login, verifyMfa, logout, refresh],
+  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+export function useSession(): SessionApi {
+  const v = useContext(Ctx);
+  if (!v) throw new Error('useSession must be used within SessionProvider');
+  return v;
+}
