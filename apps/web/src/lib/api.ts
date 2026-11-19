@@ -29,6 +29,7 @@ export async function apiFetch<T>(
     method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
     body?: unknown;
     signal?: AbortSignal;
+    headers?: Record<string, string>;
   } = {},
 ): Promise<T> {
   const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData;
@@ -38,8 +39,10 @@ export async function apiFetch<T>(
       method: init.method ?? 'GET',
       credentials: 'same-origin',
       // For FormData the browser must set the multipart boundary itself.
-      headers:
-        init.body === undefined || isForm ? undefined : { 'Content-Type': 'application/json' },
+      headers: {
+        ...(init.body === undefined || isForm ? {} : { 'Content-Type': 'application/json' }),
+        ...(init.headers ?? {}),
+      },
       body:
         init.body === undefined
           ? undefined

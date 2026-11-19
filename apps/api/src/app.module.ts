@@ -6,6 +6,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { ClinicalModule } from './clinical/clinical.module';
 import { ImagingModule } from './imaging/imaging.module';
 import { StorageModule } from './storage/storage.module';
+import { BillingModule } from './billing/billing.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard, OriginGuard, PermissionsGuard } from './auth/guards';
@@ -72,6 +73,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ClinicalModule,
     StorageModule,
     ImagingModule,
+    BillingModule,
     UsersModule,
     HealthModule,
   ],

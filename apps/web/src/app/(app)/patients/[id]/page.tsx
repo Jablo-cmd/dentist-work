@@ -238,6 +238,15 @@ function PatientView({ patient, reload }: { patient: Patient; reload: () => void
         </Link>
       )}
 
+      {can(user, 'billing.read') && (
+        <Link
+          href={`/patients/${patient.id}/billing`}
+          className="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium hover:bg-muted"
+        >
+          Open billing and account
+        </Link>
+      )}
+
       {patient.severeAllergyCount !== null && (
         <MedicalHistoryCard
           patientId={patient.id}

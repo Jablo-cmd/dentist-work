@@ -2,6 +2,7 @@
 
 import {
   Building2,
+  BarChart3,
   CalendarDays,
   CopyCheck,
   KeyRound,
@@ -23,7 +24,12 @@ import { useSession } from '@/lib/session';
 import type { Permission } from '@dpms/contracts';
 import { cn } from '@/lib/utils';
 
-const NAV: { href: string; label: string; icon: LucideIcon; permission?: Permission }[] = [
+const NAV: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  permission?: Permission | Permission[];
+}[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/practices', label: 'Practices', icon: Building2, permission: 'practice.read' },
   { href: '/patients', label: 'Patients', icon: UserRound, permission: 'patient.read' },
@@ -38,6 +44,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; permission?: Permiss
     label: 'Appointments',
     icon: CalendarDays,
     permission: 'appointment.read',
+  },
+  {
+    href: '/reports',
+    label: 'Reports',
+    icon: BarChart3,
+    permission: ['appointment.read', 'financial_report.read'],
   },
   { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
   { href: '/change-password', label: 'Password', icon: KeyRound },
@@ -73,30 +85,30 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const nav = (
     <nav aria-label="Primary" className="flex flex-col gap-1">
-      {NAV.filter((n) => !n.permission || can(user, n.permission)).map(
-        ({ href, label, icon: Icon }) => {
-          const active =
-            href === '/' || href === '/patients'
-              ? pathname === href ||
-                (href === '/patients' &&
-                  pathname.startsWith('/patients/') &&
-                  !pathname.startsWith('/patients/duplicates'))
-              : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-white/10 hover:text-white',
-                active && 'bg-white/10 text-white',
-              )}
-            >
-              <Icon className="h-4 w-4" aria-hidden /> {label}
-            </Link>
-          );
-        },
-      )}
+      {NAV.filter(
+        (n) => !n.permission || [n.permission].flat().some((perm) => can(user, perm)),
+      ).map(({ href, label, icon: Icon }) => {
+        const active =
+          href === '/' || href === '/patients'
+            ? pathname === href ||
+              (href === '/patients' &&
+                pathname.startsWith('/patients/') &&
+                !pathname.startsWith('/patients/duplicates'))
+            : pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-white/10 hover:text-white',
+              active && 'bg-white/10 text-white',
+            )}
+          >
+            <Icon className="h-4 w-4" aria-hidden /> {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 
