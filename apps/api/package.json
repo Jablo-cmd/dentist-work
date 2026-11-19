@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "admin:bootstrap": "node dist/cli/bootstrap-owner.js",
+    "import:patients": "node dist/cli/import-patients.js",
     "openapi:export": "node dist/cli/export-openapi.js"
   },
   "dependencies": {

@@ -41,6 +41,10 @@ pnpm dev:web   # http://localhost:3000
 
 The web app proxies `/api/*` to `API_INTERNAL_URL`.
 
+## Optional: local object storage for imaging
+
+Imaging needs an S3-compatible bucket. Any private bucket works (e.g. MinIO via Docker). Set the `STORAGE_*` variables in `apps/api/.env` (docs/10). Without them the rest of the system works and imaging reports "not configured". Automated tests use an in-process S3-compatible test server (`s3rver`), so no external service is needed to run them.
+
 ## Quality commands
 
 | Command                             | Purpose                                                                                                  |

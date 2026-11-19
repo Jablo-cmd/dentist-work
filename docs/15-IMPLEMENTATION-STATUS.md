@@ -1,10 +1,17 @@
 # 15 — Implementation Status and Outstanding Decisions
 
-Last updated: foundation delivery (2026-11-19). Status words follow docs/README.
+Last updated: modules delivery (2026-11-19). Status words follow docs/README.
 
-## Implemented (code exists and verified)
+## Implemented (code exists and verified by the tests in docs/14)
 
-Monorepo (pnpm), strict TypeScript, ESLint/Prettier, CI workflow definition · NestJS API (versioned REST, OpenAPI, health/readiness, correlation ids, structured logging, exception filter, env validation) · PostgreSQL/Prisma foundation schema and migration workflow · shared contracts · authentication, sessions, lockout, rate limiting, RBAC with practice scope, audit trail · practices list/get/create · audit-event listing · Next.js shell (login, overview, practices) with loading/empty/error states and toasts · owner bootstrap CLI.
+- **Foundation:** monorepo, API, web shell, contracts, CI, security baseline (docs/13).
+- **Identity:** authentication, sessions, lockout, rate limiting, RBAC with practice scope, user management (create, deactivate, roles, admin password reset), change password, session purge, practice management, audit trail and listing.
+- **Patients:** registration with validation, practice-scoped access and explicit cross-practice linking, search, revisions, emergency contacts, medical history and allergies (append-only), duplicate candidates with human review.
+- **Appointments:** day/week calendar, booking, reschedule, cancel, check-in/complete/no-show, history, DB-enforced conflict prevention.
+- **Clinical:** encounters, versioned notes with finalise/amend/addendum, FDI dental chart, treatment plans with status workflow.
+- **Imaging:** private S3-compatible storage adapter, validated uploads, authorised/audited downloads (needs storage configured; otherwise reports unavailable).
+- **Billing and reporting:** invoices, credit notes, payments with allocation/reversal, patient account, financial and operational reports.
+- **Migration tooling:** patient CSV import with dry-run, duplicate holding and reconciliation report (docs/16).
 
 ## In progress
 
@@ -12,11 +19,23 @@ None.
 
 ## Proposed (documented, not built)
 
-Everything in docs/02 beyond the above: patients, medical history, appointments, clinical records, charting, treatment plans, imaging/storage, billing, reporting, user management, background jobs, MFA, expired-session purge, e2e suite.
+Patient record merge; user self-service password reset/email; MFA; committed browser e2e suite; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
 
 ## Awaiting client confirmation
 
-Q04 final roles/permissions · Q05 cross-practice visibility · Q02 practice details · MFA policy/method · Q18/Q19 hosting, backup, RPO/RTO · Q20 retention · Q21 Information Officer/POPIA process · Q22 notation/templates.
+| Item                                                       | Why it matters now                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Q04 final roles/permissions                                | Current mapping is a conservative default (apps/api/src/access/permissions.ts)             |
+| Q05 cross-practice visibility                              | Implemented strictly (explicit link only)                                                  |
+| **MFA policy and method**                                  | Required before any real user                                                              |
+| Q02 practice details                                       | Practices are created by the owner in the UI                                               |
+| Q12 billing: tax, invoice numbering/format, rounding       | Tax is entered not calculated; `INV-`/`CN-` numbering and half-up rounding are assumptions |
+| Q13 reminders (consent/channels)                           | Not built                                                                                  |
+| Q18/Q19 hosting, backups, RPO/RTO, storage provider/region | Nothing provisioned                                                                        |
+| Q20 retention                                              | Nothing is ever deleted until defined                                                      |
+| Q21 Information Officer / POPIA process                    | Governance gate for go-live                                                                |
+| Q22 dental notation and templates                          | FDI and the condition list are working defaults                                            |
+| Q09 imaging formats                                        | JPEG/PNG/PDF/DICOM accepted; STL/PLY not                                                   |
 
 ## Awaiting vendor confirmation
 
@@ -24,17 +43,19 @@ VistaSoft (Q07) and 3Shape TRIOS (Q08). Only interface definitions exist (`apps/
 
 ## Known limitations
 
-- Practices cannot be created from the UI (API only); no user-management API/UI — additional users currently require direct database administration or a future feature.
-- Session rows are not purged after expiry.
-- Web CSP allows `'unsafe-inline'` scripts/styles (Next.js hydration); tighten with nonces once the hosting target is fixed.
-- The web proxy assumes the web server can reach the API directly.
+- No malware scanning; uploads are buffered in memory (bounded by `IMAGING_MAX_BYTES`).
+- Clinical/billing UIs are functional but plain (no templates, printing, or bulk operations).
+- Billing: single currency (ZAR); no tax computation; credit after payment can leave a negative outstanding (patient credit) by design; no refunds workflow.
+- Appointments have practitioners but no separate chair/resource model; no recurring appointments; no reminders.
+- Web CSP allows `'unsafe-inline'` (Next.js hydration); tighten with nonces once hosting is fixed.
 - Argon2 parameters are the OWASP baseline, not tuned to production hardware.
-- No object storage, no malware scanning, no backups configured — none provisioned in this phase.
+- The S3 adapter is tested against an S3-compatible test server, not yet against the chosen production provider.
 - Not POPIA-certified; no claim of compliance is made.
 
-## Risks and recommended next phase
+## Risks and recommended next steps
 
-1. Resolve MFA and role decisions (Q04, MFA) — gate for any real user.
-2. Phase 1 completion: user management (create/deactivate/assign, password reset), session purge, practice-management UI, Playwright e2e in CI.
-3. Then Phase 2 (patients) designed with the Q05 policy, patient-access auditing, duplicate review and field-level logging rules.
-4. Obtain vendor documentation early; it gates Phase 6 and may affect Phase 5 imaging design.
+1. Resolve MFA, roles (Q04), retention (Q20) and hosting (Q18/Q19) — these gate real data.
+2. Security review and penetration test; restore drill; commit browser e2e to CI.
+3. Client UAT of workflows and terminology (notation, templates, billing rules) with synthetic data.
+4. Obtain vendor documentation early; it gates VistaSoft/TRIOS work.
+5. Migration profiling once source systems and archive sizes are known.

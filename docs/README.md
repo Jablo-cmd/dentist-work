@@ -18,6 +18,7 @@ This directory is the working source of truth for product requirements, user wor
 - [13 Security architecture (as implemented)](13-SECURITY-ARCHITECTURE.md)
 - [14 Testing and quality](14-TESTING-AND-QUALITY.md)
 - [15 Implementation status and outstanding decisions](15-IMPLEMENTATION-STATUS.md)
+- [16 Data migration tooling](16-MIGRATION-TOOLING.md)
 - [ADR-0001 Technology and architecture](decisions/ADR-0001-TECHNOLOGY-AND-ARCHITECTURE.md)
 - [ADR-0002 Foundation implementation decisions](decisions/ADR-0002-FOUNDATION-IMPLEMENTATION.md)
 

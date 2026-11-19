@@ -21,7 +21,18 @@ Status: **Implemented.** The API validates its environment at startup (`apps/api
 | `TRUST_PROXY_HOPS`             | `0`                                | Reverse-proxy hops to trust for client IP. Set correctly behind a load balancer, or rate limiting/audit IPs are wrong |
 | `SWAGGER_ENABLED`              | on outside production              | ★ rejected if enabled in production                                                                                   |
 
-CLI-only: `DPMS_BOOTSTRAP_PASSWORD` (see docs/09). Tests: `TEST_DATABASE_URL`, `SHADOW_DATABASE_URL` (migration validation).
+### Object storage (imaging) — optional; leave all unset to disable imaging
+
+| Variable                                                                                 | Default     | Notes                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | unset       | Must be set together or the API refuses to start. Secrets. Bucket must be **private** with provider encryption at rest. Region/provider are an open client decision (Q18). |
+| `STORAGE_ENDPOINT`                                                                       | AWS default | For S3-compatible providers (MinIO, etc.). ★ must be `https://` in production                                                                                              |
+| `STORAGE_FORCE_PATH_STYLE`                                                               | `false`     | Needed by some S3-compatible servers                                                                                                                                       |
+| `IMAGING_MAX_BYTES`                                                                      | `25000000`  | Per-file upload limit (files are buffered in memory up to this size)                                                                                                       |
+
+Without storage, upload endpoints return `503` and `/health/ready` reports `storage: not_configured` (informational; the API stays ready).
+
+CLI-only: `DPMS_BOOTSTRAP_PASSWORD` (see docs/09). Import tool: see docs/16. Tests: `TEST_DATABASE_URL`, `SHADOW_DATABASE_URL` (migration validation).
 
 ## Web
 

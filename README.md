@@ -33,7 +33,7 @@ The frontend and backend are separate applications. Large imaging and document f
 
 ## Current status
 
-The **engineering foundation** is implemented: monorepo, API, database/migrations, shared contracts, authentication/RBAC/audit, web shell, tests and CI. Clinical, patient, imaging and billing modules are **not yet built**. See [`docs/15-IMPLEMENTATION-STATUS.md`](docs/15-IMPLEMENTATION-STATUS.md) for what is implemented versus planned, and [`docs/08-ROADMAP-ACCEPTANCE-AND-OPEN-QUESTIONS.md`](docs/08-ROADMAP-ACCEPTANCE-AND-OPEN-QUESTIONS.md) for the roadmap and open questions. A documented requirement is not evidence of implementation.
+The foundation and the core modules are implemented: identity and user management, patients and medical history, appointments, clinical records and dental charting, treatment plans, imaging with private object storage, billing and reporting, and patient-import tooling. **Vendor integrations (VistaSoft, 3Shape TRIOS) are not built** (awaiting vendor confirmation); medical aid claims are out of scope. **No real patient data has been loaded, MFA is not yet implemented, and the system must not be used with live patient data until the production gates in docs/05 are met.** See [`docs/15-IMPLEMENTATION-STATUS.md`](docs/15-IMPLEMENTATION-STATUS.md) for what is implemented versus planned, and [`docs/08-ROADMAP-ACCEPTANCE-AND-OPEN-QUESTIONS.md`](docs/08-ROADMAP-ACCEPTANCE-AND-OPEN-QUESTIONS.md) for the roadmap and open questions. A documented requirement is not evidence of implementation.
 
 ## Quick start
 

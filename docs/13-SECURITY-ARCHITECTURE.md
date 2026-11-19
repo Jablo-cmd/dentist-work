@@ -1,6 +1,6 @@
 # 13 — Security Architecture (as implemented)
 
-This describes controls that exist in code. It is not a compliance statement: POPIA compliance also needs organisational, legal and operational controls (docs/05). No patient data exists in the system yet.
+This describes controls that exist in code. It is not a compliance statement: POPIA compliance also needs organisational, legal and operational controls (docs/05). The system now stores patient, clinical, imaging and financial data structures; **no real patient data has been loaded** and none may be until the production gates in docs/05 are met.
 
 ## Implemented controls
 
@@ -22,14 +22,26 @@ This describes controls that exist in code. It is not a compliance statement: PO
 | Secrets        | None in repo; `.env*` ignored; CI uses throwaway DB credentials                                                                                                                                                                      | `.gitignore`, CI                                |
 | Dependencies   | `pnpm audit` gate in CI (currently: no known vulnerabilities in production deps)                                                                                                                                                     | CI                                              |
 
+## Controls added with the feature modules
+
+| Area                | Control                                                                                                                                                                                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User administration | Privilege-escalation rules: practice administrators can only create/modify users in their own practice and only for non-administrative roles; last active Organisation Owner is protected; forced password change on first sign-in and after admin reset; password change revokes other sessions; deactivation/reset revokes sessions immediately |
+| Patient privacy     | Visibility only through explicit practice links (strict default pending Q05); out-of-scope returns 404 + audit; search requires criteria, exact match on identifiers, search terms never audited; profile/medical/clinical/imaging views and lists audited; audit metadata never contains personal or clinical values (tested)                    |
+| Clinical integrity  | Versioned immutable notes, finalise lock, amendments/addenda with authorship and reason; enforced by DB triggers as well as the API; reception/billing/administrators cannot read clinical content (tested)                                                                                                                                       |
+| Imaging             | Content-signature validation (declared type/filename untrusted), size limits, SHA-256, duplicate detection, opaque object keys, authorisation re-checked and audited on every download, no pre-signed URLs, `nosniff`/`no-store`/CSP on responses                                                                                                 |
+| Financial integrity | Exact decimals; immutable posted records; credit notes/reversals instead of edits; idempotent payments; DB-enforced allocation/credit limits under concurrency; practice-scoped reads                                                                                                                                                             |
+| Operational         | Session purge job; DB-level append-only audit                                                                                                                                                                                                                                                                                                     |
+
 ## Not implemented yet (do not assume)
 
-- **MFA** — required by docs/05 for privileged users; **awaiting client decision** on method/scope. Until then privileged accounts rely on password + lockout + rate limiting. This must be resolved before production.
-- Password change/reset, user management UI/API, session listing, expired-session purge.
-- Object storage, signed URLs, upload validation, malware scanning (imaging phase).
-- Patient-record access auditing (no patient data yet).
-- Row-level security, encryption-at-rest verification, backup/restore evidence, penetration test.
-- Cross-practice patient visibility policy (Q05): practice scoping is strict until decided.
+- **MFA** — required by docs/05 for privileged users; **awaiting client decision** on method/scope. Must be resolved before any real user logs in.
+- **Malware scanning of uploads** — no scanner is deployed; assets are honestly marked `NOT_SCANNED` (API and UI).
+- STL/PLY 3D scan formats, DICOM _processing/viewing_ (files are stored and downloaded only), vendor imports, reconciliation queue (requires vendor integrations).
+- Patient record **merging** (duplicates are recorded and reviewed only), patient-facing reminders/communications, medical aid claims (out of scope).
+- Password reset by email/self-service (admin reset only), session listing UI.
+- Row-level security, encryption-at-rest verification, backup/restore evidence, penetration test, formal threat model review.
+- Tax logic (VAT) and invoice formatting rules — awaiting client/accountant (Q12). Tax is recorded as entered.
 
 ## Rules for contributors
 
