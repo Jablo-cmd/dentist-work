@@ -5,6 +5,7 @@ import { ENV, type Env } from '../config/env';
 import { PrismaService } from '../prisma/prisma.service';
 import { permissionsFor } from '../access/permissions';
 import type { Principal } from './auth.types';
+import { mfaFlags } from './mfa.service';
 
 const TOUCH_INTERVAL_MS = 60_000;
 
@@ -38,7 +39,7 @@ export class SessionService {
   async resolve(token: string): Promise<Principal | null> {
     const session = await this.prisma.session.findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { user: { include: { roleAssignments: true } } },
+      include: { user: { include: { roleAssignments: true, mfa: true } } },
     });
     if (!session || session.revokedAt) return null;
     const now = Date.now();
@@ -68,6 +69,7 @@ export class SessionService {
       displayName: user.displayName,
       organisationId: user.organisationId,
       mustChangePassword: user.mustChangePassword,
+      ...mfaFlags(this.env, assignments, !!user.mfa?.confirmedAt),
       assignments,
       permissions: permissionsFor(assignments),
       sessionId: session.id,

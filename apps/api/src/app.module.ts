@@ -56,10 +56,13 @@ import { PrismaModule } from './prisma/prisma.module';
             name: 'login',
             ttl: 60_000,
             limit: env.loginRateLimitPerMinute,
+            // Credential-guessing surfaces: password sign-in and second-factor verification.
             skipIf: (ctx) =>
-              !(ctx.switchToHttp().getRequest<{ originalUrl: string }>().originalUrl ?? '')
-                .split('?')[0]!
-                .endsWith('/auth/login'),
+              !/\/auth\/(login|mfa\/verify)$/.test(
+                (ctx.switchToHttp().getRequest<{ originalUrl: string }>().originalUrl ?? '').split(
+                  '?',
+                )[0]!,
+              ),
           },
         ],
       }),

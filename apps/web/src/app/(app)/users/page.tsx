@@ -213,6 +213,11 @@ export default function UsersPage() {
                   <div>
                     <p className="font-medium">
                       {u.displayName} {!u.isActive && <Badge className="ml-1">Inactive</Badge>}
+                      {u.mfaEnabled && (
+                        <Badge tone="success" className="ml-1">
+                          2FA
+                        </Badge>
+                      )}
                       {u.mustChangePassword && (
                         <Badge tone="warning" className="ml-1">
                           Password change pending
@@ -230,6 +235,31 @@ export default function UsersPage() {
                       >
                         Reset password
                       </Button>
+                      {u.mfaEnabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Reset two-factor authentication for ${u.displayName}? They will be signed out and must set it up again.`,
+                              )
+                            )
+                              void apiFetch(`/users/${u.id}/mfa-reset`, null, {
+                                method: 'POST',
+                                body: {},
+                              }).then(
+                                () => {
+                                  notify('success', 'Two-factor authentication reset.');
+                                  users.reload();
+                                },
+                                (e) => notify('error', describeError(e)),
+                              );
+                          }}
+                        >
+                          Reset 2FA
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={() => void toggleActive(u)}>
                         {u.isActive ? 'Deactivate' : 'Reactivate'}
                       </Button>

@@ -73,6 +73,9 @@ model Practice {
 }
 
 model User {
+  mfa                      UserMfa?
+  mfaRecoveryCodes         MfaRecoveryCode[]
+  mfaChallenges            MfaChallenge[]
   encountersAsPractitioner ClinicalEncounter[]   @relation("EncounterPractitioner")
   noteVersions             ClinicalNoteVersion[] @relation("NoteAuthor")
   id                       String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -760,4 +763,53 @@ model PaymentAllocation {
   @@index([paymentId])
   @@index([invoiceId])
   @@map("payment_allocations")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Multi-factor authentication (TOTP). Secrets are AES-256-GCM encrypted with MFA_ENCRYPTION_KEY.
+// ---------------------------------------------------------------------------------------------
+
+model UserMfa {
+  userId       String    @id @db.Uuid
+  /// base64(iv | tag | ciphertext) of the raw TOTP secret.
+  secretEnc    String
+  /// NULL until the user proves possession of the secret by entering a valid code.
+  confirmedAt  DateTime? @db.Timestamptz(6)
+  /// Last accepted time step; codes at or below it are rejected (replay protection).
+  lastUsedStep BigInt?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_mfa")
+}
+
+model MfaRecoveryCode {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String    @db.Uuid
+  /// SHA-256 of the code (80-bit random, so a fast hash is sufficient).
+  codeHash String
+  usedAt   DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, codeHash])
+  @@map("mfa_recovery_codes")
+}
+
+/// Single-use, short-lived proof that the password step succeeded. Only a hash of the token is stored.
+model MfaChallenge {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String    @unique
+  expiresAt  DateTime  @db.Timestamptz(6)
+  attempts   Int       @default(0)
+  consumedAt DateTime? @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("mfa_challenges")
 }

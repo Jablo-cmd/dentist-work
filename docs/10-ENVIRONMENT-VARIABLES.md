@@ -21,6 +21,14 @@ Status: **Implemented.** The API validates its environment at startup (`apps/api
 | `TRUST_PROXY_HOPS`             | `0`                                | Reverse-proxy hops to trust for client IP. Set correctly behind a load balancer, or rate limiting/audit IPs are wrong |
 | `SWAGGER_ENABLED`              | on outside production              | ★ rejected if enabled in production                                                                                   |
 
+### Two-factor authentication (TOTP) — optional until the client sets policy
+
+| Variable             | Default         | Notes                                                                                                                                                                                                                                                                                     |
+| -------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MFA_ENCRYPTION_KEY` | unset           | 32 random bytes, base64 (`openssl rand -base64 32`). **Secret.** Encrypts TOTP secrets (AES-256-GCM). Without it MFA is unavailable (enrol returns 503). Losing it makes enrolled secrets unreadable: back it up in the secret manager; rotating it requires re-enrolment.                |
+| `MFA_REQUIRED_ROLES` | empty           | Comma-separated role keys that must enrol (e.g. `ORGANISATION_OWNER,PRACTICE_ADMINISTRATOR,DENTIST`). Those users can only reach enrolment, `me` and sign-out until enrolled. Requires the key. **Policy is the client's decision; recommended for all privileged roles before go-live.** |
+| `MFA_ISSUER`         | `Noordwyk DPMS` | Label shown in authenticator apps                                                                                                                                                                                                                                                         |
+
 ### Object storage (imaging) — optional; leave all unset to disable imaging
 
 | Variable                                                                                 | Default     | Notes                                                                                                                                                                      |

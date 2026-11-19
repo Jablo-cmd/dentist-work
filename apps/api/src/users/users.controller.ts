@@ -97,6 +97,17 @@ export class UsersController {
     return this.users.removeAssignment(p, id, aid, ctx(req));
   }
 
+  @Post(':id/mfa-reset')
+  @HttpCode(204)
+  @RequirePermission('user.manage')
+  resetMfa(
+    @CurrentPrincipal() p: Principal,
+    @Param('id', uuid()) id: string,
+    @Req() req: AppRequest,
+  ): Promise<void> {
+    return this.users.resetMfa(p, id, ctx(req));
+  }
+
   @Post(':id/reset-password')
   @HttpCode(204)
   @RequirePermission('user.manage')

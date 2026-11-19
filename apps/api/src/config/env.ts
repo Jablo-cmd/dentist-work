@@ -1,3 +1,4 @@
+import { ROLE_KEYS } from '@dpms/contracts';
 import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
@@ -52,6 +53,26 @@ const baseSchema = z.object({
   STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
   STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   STORAGE_FORCE_PATH_STYLE: bool.optional(),
+  /** 32 random bytes, base64. Required to enable MFA. Generate with: openssl rand -base64 32 */
+  MFA_ENCRYPTION_KEY: z
+    .string()
+    .optional()
+    .refine(
+      (v) => v === undefined || Buffer.from(v, 'base64').length === 32,
+      'must be 32 bytes, base64-encoded',
+    ),
+  MFA_ISSUER: z.string().min(1).max(60).default('Noordwyk DPMS'),
+  /** Comma-separated role keys that MUST enrol a second factor. Empty = optional for everyone (policy pending). */
+  MFA_REQUIRED_ROLES: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.enum(ROLE_KEYS))),
   IMAGING_MAX_BYTES: z.coerce.number().int().min(1024).max(100_000_000).default(25_000_000),
 });
 
@@ -74,6 +95,10 @@ export type Env = {
   /** null = object storage not configured (imaging disabled). */
   storage: StorageConfig | null;
   imagingMaxBytes: number;
+  /** null = MFA unavailable (no encryption key). */
+  mfaKey: Buffer | null;
+  mfaIssuer: string;
+  mfaRequiredRoles: readonly (typeof ROLE_KEYS)[number][];
 };
 
 export interface StorageConfig {
@@ -128,6 +153,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     );
   if (isProduction && e.STORAGE_ENDPOINT && !e.STORAGE_ENDPOINT.startsWith('https://'))
     problems.push('STORAGE_ENDPOINT: must be https:// in production');
+  if (e.MFA_REQUIRED_ROLES.length > 0 && !e.MFA_ENCRYPTION_KEY)
+    problems.push('MFA_ENCRYPTION_KEY: required when MFA_REQUIRED_ROLES is set');
   if (e.SESSION_IDLE_TIMEOUT_MINUTES > e.SESSION_TTL_MINUTES)
     problems.push('SESSION_IDLE_TIMEOUT_MINUTES: must not exceed SESSION_TTL_MINUTES');
   if (problems.length) throw new EnvValidationError(problems);
@@ -149,6 +176,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     loginRateLimitPerMinute: e.LOGIN_RATE_LIMIT_PER_MINUTE,
     imagingMaxBytes: e.IMAGING_MAX_BYTES,
+    mfaKey: e.MFA_ENCRYPTION_KEY ? Buffer.from(e.MFA_ENCRYPTION_KEY, 'base64') : null,
+    mfaIssuer: e.MFA_ISSUER,
+    mfaRequiredRoles: e.MFA_REQUIRED_ROLES,
     storage:
       storageSet === storageVars.length
         ? {

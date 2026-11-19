@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CopyCheck,
   KeyRound,
+  ShieldCheck,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -53,6 +54,7 @@ const NAV: {
   },
   { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
   { href: '/change-password', label: 'Password', icon: KeyRound },
+  { href: '/security', label: 'Two-factor', icon: ShieldCheck },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -69,6 +71,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       pathname !== '/change-password'
     )
       router.replace('/change-password');
+    else if (
+      state.status === 'authenticated' &&
+      state.user.mfaEnrolmentRequired &&
+      pathname !== '/security'
+    )
+      router.replace('/security');
   }, [state, router, pathname]);
   useEffect(() => setOpen(false), [pathname]);
 

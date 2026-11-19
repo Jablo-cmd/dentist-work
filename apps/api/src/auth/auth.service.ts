@@ -1,11 +1,22 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import type { ChangePasswordRequest, CurrentUser, LoginRequest } from '@dpms/contracts';
+import type { Prisma } from '@prisma/client';
+import type {
+  ChangePasswordRequest,
+  CurrentUser,
+  LoginRequest,
+  MfaVerifyRequest,
+} from '@dpms/contracts';
+
+export type LoginResult =
+  | { kind: 'session'; user: CurrentUser; token: string; expiresAt: Date }
+  | { kind: 'mfa'; challenge: string };
 import { CodedHttpException } from '../common/http-exception.filter';
 import { ENV, type Env } from '../config/env';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { permissionsFor } from '../access/permissions';
 import type { Principal } from './auth.types';
+import { MfaService, mfaFlags } from './mfa.service';
 import { assertAcceptablePassword, PasswordService } from './password.service';
 import { SessionService } from './session.service';
 
@@ -29,16 +40,14 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     private readonly audit: AuditService,
+    private readonly mfa: MfaService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
-  async login(
-    input: LoginRequest,
-    ctx: RequestContext,
-  ): Promise<{ user: CurrentUser; token: string; expiresAt: Date }> {
+  async login(input: LoginRequest, ctx: RequestContext): Promise<LoginResult> {
     const user = await this.prisma.user.findUnique({
       where: { email: input.email },
-      include: { roleAssignments: true },
+      include: { roleAssignments: true, mfa: true },
     });
     const base = { requestId: ctx.requestId, ipAddress: ctx.ip };
 
@@ -107,10 +116,47 @@ export class AuthService {
         data: { passwordHash: await this.passwords.hash(input.password) },
       });
     }
+    // Password accepted. If a second factor is enrolled, no session exists until it is proven.
+    if (user.mfa?.confirmedAt) {
+      const challenge = await this.mfa.createChallenge(user.id);
+      return { kind: 'mfa', challenge };
+    }
+    return this.completeLogin(user, ctx);
+  }
+
+  /** Second step of a two-step sign-in: exchange the challenge plus a code for a session. */
+  async verifyMfa(
+    input: MfaVerifyRequest,
+    ctx: RequestContext,
+  ): Promise<Extract<LoginResult, { kind: 'session' }>> {
+    const userId = await this.mfa.verifyChallenge(input, { requestId: ctx.requestId, ip: ctx.ip });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { roleAssignments: true, mfa: true },
+    });
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
+    });
+    return this.completeLogin(user, ctx);
+  }
+
+  private async completeLogin(
+    user: Prisma.UserGetPayload<{ include: { roleAssignments: true; mfa: true } }>,
+    ctx: RequestContext,
+  ): Promise<Extract<LoginResult, { kind: 'session' }>> {
     const { token, expiresAt } = await this.sessions.create(user.id, ctx.userAgent);
     // Fail closed: if the success event cannot be recorded, the login is not completed.
     try {
-      await this.audit.record({ ...auditBase, outcome: 'SUCCESS' });
+      await this.audit.record({
+        requestId: ctx.requestId,
+        ipAddress: ctx.ip,
+        actorUserId: user.id,
+        organisationId: user.organisationId,
+        action: 'auth.login',
+        outcome: 'SUCCESS',
+        metadata: { mfa: !!user.mfa?.confirmedAt },
+      });
     } catch (err) {
       await this.sessions.revokeAllForUser(user.id, 'audit_failure');
       throw err;
@@ -120,6 +166,7 @@ export class AuthService {
       practiceId: a.practiceId,
     }));
     return {
+      kind: 'session',
       token,
       expiresAt,
       user: {
@@ -128,6 +175,7 @@ export class AuthService {
         displayName: user.displayName,
         organisationId: user.organisationId,
         mustChangePassword: user.mustChangePassword,
+        ...mfaFlags(this.env, assignments, !!user.mfa?.confirmedAt),
         assignments,
         permissions: permissionsFor(assignments),
       },

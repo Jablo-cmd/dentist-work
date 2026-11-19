@@ -14,7 +14,7 @@ export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   'postgresql://dpms:dpms_local_dev_only@localhost:5432/dpms_test?schema=public';
 
-export function testEnv(overrides: Record<string, string> = {}) {
+export function testEnv(overrides: Record<string, string | undefined> = {}) {
   return {
     NODE_ENV: 'test',
     DATABASE_URL: TEST_DATABASE_URL,
@@ -23,14 +23,18 @@ export function testEnv(overrides: Record<string, string> = {}) {
     RATE_LIMIT_PER_MINUTE: '10000',
     LOGIN_RATE_LIMIT_PER_MINUTE: '10000',
     LOGIN_MAX_FAILED_ATTEMPTS: '3',
+    // Test-only key (32 bytes, base64). Never reuse outside tests.
+    MFA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
     ...overrides,
   };
 }
 
 export async function createTestApp(
-  overrides: Record<string, string> = {},
+  overrides: Record<string, string | undefined> = {},
 ): Promise<NestExpressApplication> {
   Object.assign(process.env, testEnv(overrides));
+  // An override of `undefined` means "unset this variable".
+  for (const [k, v] of Object.entries(overrides)) if (v === undefined) delete process.env[k];
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app, loadEnv());
@@ -50,7 +54,7 @@ export interface Fixtures {
 
 export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE payment_allocations, payments, invoice_lines, invoices, invoice_sequences, imaging_assets, treatment_plan_item_events, treatment_plan_items, treatment_plans, dental_chart_entries, clinical_note_versions, clinical_encounters, appointment_events, appointments, audit_events, sessions, user_role_assignments, users, practices, organisations, patients, patient_practices CASCADE',
+    'TRUNCATE TABLE mfa_challenges, mfa_recovery_codes, user_mfa, payment_allocations, payments, invoice_lines, invoices, invoice_sequences, imaging_assets, treatment_plan_item_events, treatment_plan_items, treatment_plans, dental_chart_entries, clinical_note_versions, clinical_encounters, appointment_events, appointments, audit_events, sessions, user_role_assignments, users, practices, organisations, patients, patient_practices CASCADE',
   );
   const org = await prisma.organisation.create({ data: { name: 'Synthetic Test Organisation' } });
   const [a, b] = await Promise.all([

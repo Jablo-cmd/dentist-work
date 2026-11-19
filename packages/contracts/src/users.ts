@@ -15,6 +15,7 @@ export const userSummarySchema = z.object({
   displayName: z.string(),
   isActive: z.boolean(),
   mustChangePassword: z.boolean(),
+  mfaEnabled: z.boolean(),
   lastLoginAt: z.string().datetime().nullable(),
   assignments: z.array(userAssignmentSchema),
 });

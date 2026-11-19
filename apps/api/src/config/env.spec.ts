@@ -50,3 +50,37 @@ describe('loadEnv', () => {
     ).toThrow(/IDLE/);
   });
 });
+
+describe('MFA configuration', () => {
+  const base = {
+    NODE_ENV: 'development',
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    WEB_ORIGINS: 'http://localhost:3000',
+  };
+  const key = Buffer.alloc(32, 1).toString('base64');
+  it('is optional and off by default', () => {
+    const env = loadEnv(base);
+    expect(env.mfaKey).toBeNull();
+    expect(env.mfaRequiredRoles).toEqual([]);
+  });
+  it('validates the key length and the role list', () => {
+    expect(() =>
+      loadEnv({ ...base, MFA_ENCRYPTION_KEY: Buffer.alloc(16).toString('base64') }),
+    ).toThrow(/MFA_ENCRYPTION_KEY/);
+    expect(() =>
+      loadEnv({ ...base, MFA_ENCRYPTION_KEY: key, MFA_REQUIRED_ROLES: 'WIZARD' }),
+    ).toThrow(/MFA_REQUIRED_ROLES/);
+    expect(
+      loadEnv({
+        ...base,
+        MFA_ENCRYPTION_KEY: key,
+        MFA_REQUIRED_ROLES: 'DENTIST, ORGANISATION_OWNER',
+      }).mfaRequiredRoles,
+    ).toEqual(['DENTIST', 'ORGANISATION_OWNER']);
+  });
+  it('refuses to require MFA without an encryption key', () => {
+    expect(() => loadEnv({ ...base, MFA_REQUIRED_ROLES: 'DENTIST' })).toThrow(
+      /MFA_ENCRYPTION_KEY: required/,
+    );
+  });
+});

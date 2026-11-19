@@ -5,7 +5,7 @@ Last updated: modules delivery (2026-11-19). Status words follow docs/README.
 ## Implemented (code exists and verified by the tests in docs/14)
 
 - **Foundation:** monorepo, API, web shell, contracts, CI, security baseline (docs/13).
-- **Identity:** authentication, sessions, lockout, rate limiting, RBAC with practice scope, user management (create, deactivate, roles, admin password reset), change password, session purge, practice management, audit trail and listing.
+- **Identity:** authentication (incl. TOTP two-factor with recovery codes and configurable enforcement), sessions, lockout, rate limiting, RBAC with practice scope, user management (create, deactivate, roles, admin password reset), change password, session purge, practice management, audit trail and listing.
 - **Patients:** registration with validation, practice-scoped access and explicit cross-practice linking, search, revisions, emergency contacts, medical history and allergies (append-only), duplicate candidates with human review.
 - **Appointments:** day/week calendar, booking, reschedule, cancel, check-in/complete/no-show, history, DB-enforced conflict prevention.
 - **Clinical:** encounters, versioned notes with finalise/amend/addendum, FDI dental chart, treatment plans with status workflow.

@@ -102,6 +102,16 @@ export class PermissionsGuard implements CanActivate {
         'Password change required.',
       );
     }
+    if (
+      req.principal?.mfaEnrolmentRequired &&
+      !this.reflector.getAllAndOverride<boolean>(ALLOW_PASSWORD_CHANGE_PENDING, targets)
+    ) {
+      throw new CodedHttpException(
+        HttpStatus.FORBIDDEN,
+        'MFA_ENROLMENT_REQUIRED',
+        'Set up two-factor authentication to continue.',
+      );
+    }
     const required = this.reflector.getAllAndOverride<PermissionRequirement | undefined>(
       REQUIRED_PERMISSION,
       targets,

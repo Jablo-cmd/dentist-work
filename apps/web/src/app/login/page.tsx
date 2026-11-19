@@ -11,10 +11,40 @@ import { ApiRequestError } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
 export default function LoginPage() {
-  const { login } = useSession();
+  const { login, verifyMfa } = useSession();
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [useRecovery, setUseRecovery] = useState(false);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  async function onVerify(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const value = String(new FormData(e.currentTarget).get('code') ?? '').trim();
+    if (!challenge) return;
+    setPending(true);
+    try {
+      await verifyMfa({ challenge, ...(useRecovery ? { recoveryCode: value } : { code: value }) });
+      router.replace('/');
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.code === 'RATE_LIMITED')
+        setError('Too many attempts. Please wait a minute and try again.');
+      else if (err instanceof ApiRequestError && err.status === 400)
+        setError(
+          useRecovery
+            ? 'Enter the recovery code in the form xxxx-xxxx-xxxx-xxxx.'
+            : 'Enter the 6-digit code from your authenticator app.',
+        );
+      else {
+        setError(
+          'That code was not accepted, or it has expired. Check your authenticator app and try again, or sign in again.',
+        );
+      }
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,7 +60,11 @@ export default function LoginPage() {
     }
     setPending(true);
     try {
-      await login(parsed.data);
+      const r = await login(parsed.data);
+      if (r.mfaChallenge) {
+        setChallenge(r.mfaChallenge);
+        return;
+      }
       router.replace('/');
     } catch (err) {
       setError(
@@ -60,43 +94,105 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={onSubmit} className="space-y-4" noValidate>
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  aria-invalid={!!error}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  aria-invalid={!!error}
-                />
-              </div>
-              {error && (
-                <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
-                  {error}
-                </p>
-              )}
-              <Button type="submit" className="w-full" disabled={pending}>
-                {pending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-                {pending ? 'Signing in…' : 'Sign in'}
-              </Button>
-            </form>
+            {challenge ? (
+              <form onSubmit={onVerify} className="space-y-4" noValidate>
+                <div className="space-y-1.5">
+                  <label htmlFor="code" className="text-sm font-medium">
+                    {useRecovery ? 'Recovery code' : 'Authenticator code'}
+                  </label>
+                  <Input
+                    id="code"
+                    name="code"
+                    autoComplete="one-time-code"
+                    inputMode={useRecovery ? 'text' : 'numeric'}
+                    autoFocus
+                    required
+                    aria-invalid={!!error}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {useRecovery
+                      ? 'Each recovery code works once.'
+                      : 'Open your authenticator app and enter the 6-digit code.'}
+                  </p>
+                </div>
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+                  >
+                    {error}
+                  </p>
+                )}
+                <Button type="submit" className="w-full" disabled={pending}>
+                  {pending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                  {pending ? 'Verifying…' : 'Verify and sign in'}
+                </Button>
+                <div className="flex justify-between text-sm">
+                  <button
+                    type="button"
+                    className="text-primary underline"
+                    onClick={() => {
+                      setUseRecovery((v) => !v);
+                      setError(null);
+                    }}
+                  >
+                    {useRecovery ? 'Use authenticator code' : 'Use a recovery code'}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-muted-foreground underline"
+                    onClick={() => {
+                      setChallenge(null);
+                      setError(null);
+                      setUseRecovery(false);
+                    }}
+                  >
+                    Start over
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={onSubmit} className="space-y-4" noValidate>
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-sm font-medium">
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    aria-invalid={!!error}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    aria-invalid={!!error}
+                  />
+                </div>
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+                  >
+                    {error}
+                  </p>
+                )}
+                <Button type="submit" className="w-full" disabled={pending}>
+                  {pending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+                  {pending ? 'Signing in…' : 'Sign in'}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

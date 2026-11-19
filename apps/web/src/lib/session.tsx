@@ -3,6 +3,7 @@
 import {
   currentUserSchema,
   loginResponseSchema,
+  loginSuccessSchema,
   type CurrentUser,
   type LoginRequest,
 } from '@dpms/contracts';
@@ -23,7 +24,8 @@ type SessionState =
   { status: 'loading' } | { status: 'anonymous' } | { status: 'authenticated'; user: CurrentUser };
 interface SessionApi {
   state: SessionState;
-  login: (input: LoginRequest) => Promise<void>;
+  login: (input: LoginRequest) => Promise<{ mfaChallenge?: string }>;
+  verifyMfa: (body: { challenge: string; code?: string; recoveryCode?: string }) => Promise<void>;
   logout: () => Promise<void>;
   /** Re-reads the current user from the API (e.g. after a password change). */
   refresh: () => Promise<void>;
@@ -52,13 +54,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => ctrl.abort();
   }, []);
 
-  const login = useCallback(async (input: LoginRequest) => {
-    const { user } = await apiFetch('/auth/login', loginResponseSchema, {
-      method: 'POST',
-      body: input,
-    });
-    setState({ status: 'authenticated', user });
+  /** Returns an MFA challenge when a second factor is required, otherwise signs in. */
+  const login = useCallback(async (input: LoginRequest): Promise<{ mfaChallenge?: string }> => {
+    const res = await apiFetch('/auth/login', loginResponseSchema, { method: 'POST', body: input });
+    if ('mfaRequired' in res) return { mfaChallenge: res.challenge };
+    setState({ status: 'authenticated', user: res.user });
+    return {};
   }, []);
+
+  const verifyMfa = useCallback(
+    async (body: { challenge: string; code?: string; recoveryCode?: string }) => {
+      const { user } = await apiFetch('/auth/mfa/verify', loginSuccessSchema, {
+        method: 'POST',
+        body,
+      });
+      setState({ status: 'authenticated', user });
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -74,7 +87,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setState({ status: 'authenticated', user });
   }, []);
 
-  const value = useMemo(() => ({ state, login, logout, refresh }), [state, login, logout, refresh]);
+  const value = useMemo(
+    () => ({ state, login, verifyMfa, logout, refresh }),
+    [state, login, verifyMfa, logout, refresh],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

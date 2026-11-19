@@ -33,9 +33,13 @@ This describes controls that exist in code. It is not a compliance statement: PO
 | Financial integrity | Exact decimals; immutable posted records; credit notes/reversals instead of edits; idempotent payments; DB-enforced allocation/credit limits under concurrency; practice-scoped reads                                                                                                                                                             |
 | Operational         | Session purge job; DB-level append-only audit                                                                                                                                                                                                                                                                                                     |
 
+## Two-factor authentication (implemented)
+
+TOTP (RFC 6238, verified against the RFC test vectors). Secrets AES-256-GCM encrypted at rest; recovery codes (10, 80-bit) stored only as hashes and single-use. Sign-in is two-step: the password step issues a single-use, 5-minute challenge and **no session** until a code is proven. Codes are replay-protected (a time step can be used once), wrong guesses burn the challenge and count toward account lockout, and `/auth/mfa/verify` shares the login rate limit. Disabling needs the password **and** a current code; administrators can reset a lost device (audited, sessions revoked, same authority rules as other user changes). With `MFA_REQUIRED_ROLES`, un-enrolled users of those roles are restricted to enrolment.
+
 ## Not implemented yet (do not assume)
 
-- **MFA** — required by docs/05 for privileged users; **awaiting client decision** on method/scope. Must be resolved before any real user logs in.
+- **MFA enforcement policy** — the capability is implemented (below), but _who must use it_ is a client decision (`MFA_REQUIRED_ROLES` is empty by default). Recommended: require it for every privileged role before go-live. SMS/e-mail codes and WebAuthn/passkeys are not implemented.
 - **Malware scanning of uploads** — no scanner is deployed; assets are honestly marked `NOT_SCANNED` (API and UI).
 - STL/PLY 3D scan formats, DICOM _processing/viewing_ (files are stored and downloaded only), vendor imports, reconciliation queue (requires vendor integrations).
 - Patient record **merging** (duplicates are recorded and reviewed only), patient-facing reminders/communications, medical aid claims (out of scope).

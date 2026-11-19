@@ -17,6 +17,7 @@ import type {
 import { hasPermission, practiceScope } from '../access/permissions';
 import type { Principal } from '../auth/auth.types';
 import { assertAcceptablePassword, PasswordService } from '../auth/password.service';
+import { MfaService } from '../auth/mfa.service';
 import { SessionService } from '../auth/session.service';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,7 +25,7 @@ import { PrismaService } from '../prisma/prisma.service';
 /** Roles a practice administrator may grant (never equal-or-higher privilege). */
 const PRACTICE_GRANTABLE: readonly RoleKey[] = ['DENTIST', 'RECEPTIONIST', 'BILLING_ADMINISTRATOR'];
 
-type UserRow = Prisma.UserGetPayload<{ include: { roleAssignments: true } }>;
+type UserRow = Prisma.UserGetPayload<{ include: { roleAssignments: true; mfa: true } }>;
 
 const toDto = (u: UserRow): UserSummary => ({
   id: u.id,
@@ -32,6 +33,7 @@ const toDto = (u: UserRow): UserSummary => ({
   displayName: u.displayName,
   isActive: u.isActive,
   mustChangePassword: u.mustChangePassword,
+  mfaEnabled: !!u.mfa?.confirmedAt,
   lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
   assignments: u.roleAssignments.map((a) => ({ id: a.id, role: a.role, practiceId: a.practiceId })),
 });
@@ -47,6 +49,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
+    private readonly mfa: MfaService,
     private readonly audit: AuditService,
   ) {}
 
@@ -79,7 +82,7 @@ export class UsersService {
   private async load(p: Principal, id: string): Promise<UserRow> {
     const u = await this.prisma.user.findFirst({
       where: { id, organisationId: p.organisationId },
-      include: { roleAssignments: true },
+      include: { roleAssignments: true, mfa: true },
     });
     if (!u) throw new NotFoundException();
     return u;
@@ -115,7 +118,7 @@ export class UsersService {
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,
-        include: { roleAssignments: true },
+        include: { roleAssignments: true, mfa: true },
         orderBy: { displayName: 'asc' },
         skip: (q.page - 1) * q.pageSize,
         take: q.pageSize,
@@ -163,7 +166,7 @@ export class UsersService {
               create: input.assignments.map((a) => ({ role: a.role, practiceId: a.practiceId })),
             },
           },
-          include: { roleAssignments: true },
+          include: { roleAssignments: true, mfa: true },
         });
         await this.audit.record(
           {
@@ -211,7 +214,7 @@ export class UsersService {
       const u = await tx.user.update({
         where: { id },
         data: { displayName: input.displayName, isActive: input.isActive },
-        include: { roleAssignments: true },
+        include: { roleAssignments: true, mfa: true },
       });
       await this.audit.record(
         {
@@ -345,5 +348,13 @@ export class UsersService {
       );
     });
     await this.sessions.revokeAllForUser(id, 'password_reset');
+  }
+
+  /** Lost authenticator: remove the second factor so the user can enrol again. Same authority rules as other user changes. */
+  async resetMfa(p: Principal, id: string, ctx: Ctx): Promise<void> {
+    if (id === p.id)
+      throw new ConflictException('Use "disable two-factor" from your own security settings.');
+    await this.loadManageable(p, id, ctx);
+    await this.mfa.adminReset(p, id, ctx);
   }
 }
