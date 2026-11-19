@@ -11,14 +11,16 @@
 - File storage: private S3-compatible object storage.
 - Tests: Jest for NestJS; Vitest where appropriate for web/shared packages.
 
-## Proposed monorepo
+## Repository structure (as built)
 ```text
-apps/web       Next.js application
-apps/api       NestJS API
-packages/database  Prisma schema, migrations and DB utilities
-packages/shared    shared contracts and validation
-docs           project documentation
+apps/api            NestJS API (modular monolith). Prisma schema + migrations live in apps/api/prisma
+apps/web            Next.js application (includes the same-origin /api proxy route handler)
+packages/contracts  shared zod schemas and types (API <-> web); replaces the originally proposed packages/shared
+e2e                 Playwright browser + accessibility tests (own workspace package)
+ops                 backup / restore / restore-drill scripts
+docs                project documentation
 ```
+The originally proposed `packages/database` was **not** created: only the API accesses the database, so Prisma lives in `apps/api` (ADR-0002 decisions 1 and 2). `packages/ui` and `packages/config` were not created either; shared UI components live in `apps/web/src/components`.
 
 ## Architecture
 ```mermaid
@@ -27,12 +29,13 @@ flowchart TB
   W -->|HTTPS REST| A[NestJS API]
   A --> DB[(PostgreSQL)]
   A --> S[Private object storage]
-  A --> Q[Background jobs]
-  Q --> I[Integration adapters]
-  I -. pending validation .-> V[VistaSoft]
-  I -. pending validation .-> T[3Shape TRIOS]
+  A -. interfaces only, not implemented .-> I[Integration adapters]
+  I -. pending vendor confirmation .-> V[VistaSoft]
+  I -. pending vendor confirmation .-> T[3Shape TRIOS]
   A --> M[Logs and monitoring]
 ```
+
+*Status note:* there is no background-job runner (the only scheduled work is an in-process hourly session purge) and the integration adapters are TypeScript interfaces only (`apps/api/src/integrations`). Observability is structured JSON logs plus health/readiness endpoints; no metrics/alerting stack is deployed.
 
 Start with a modular monolith, not microservices. Keep clear modules: Auth, Organisation, Practices, Users, AccessControl, Patients, MedicalHistory, Appointments, ClinicalRecords, DentalChart, TreatmentPlans, Imaging, Billing, Reports, Audit, Storage and Integrations.
 
@@ -40,6 +43,9 @@ Start with a modular monolith, not microservices. Keep clear modules: Auth, Orga
 One organisation contains four practices. Organisation-owned records have organisation relationship; practice-scoped records carry practice scope. Derive access from authenticated server-side identity and assignments. Never trust a browser-supplied practice ID as proof of access. Test cross-practice access denial. PostgreSQL row-level security may be considered as defence in depth after connection/session design is tested.
 
 ## Core entities
+*As built:* `Role` and `Permission` are code (enum + `apps/api/src/access/permissions.ts`), not tables; `UserPracticeRole` is `user_role_assignments`; `PatientDocument` is covered by `imaging_assets`; MFA adds `user_mfa`, `mfa_recovery_codes`, `mfa_challenges`; billing adds `invoice_sequences` and `payment_allocations`; appointments add `appointment_events`. Authoritative list: `apps/api/prisma/schema.prisma` and docs/12.
+
+Original list:
 Organisation; Practice; User; Role; Permission; UserPracticeRole; Patient; PatientPractice; PatientContact; MedicalHistoryEntry; Allergy; PatientDocument; Appointment; ClinicalEncounter; ClinicalNoteVersion; DentalChartEntry; TreatmentPlan; TreatmentPlanItem; ImagingAsset; Invoice; InvoiceLine; Payment; AuditEvent.
 
 ## Data rules

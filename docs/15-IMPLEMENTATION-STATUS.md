@@ -57,7 +57,7 @@ VistaSoft (Q07) and 3Shape TRIOS (Q08). Only interface definitions exist (`apps/
 ## Risks and recommended next steps
 
 1. Decide MFA enforcement (which roles), roles (Q04), retention (Q20) and hosting (Q18/Q19) — these gate real data.
-2. Security review and penetration test; restore drill; commit browser e2e to CI.
+2. Independent security review and penetration test; production restore drill (the e2e suite is already committed and runs in CI).
 3. Client UAT of workflows and terminology (notation, templates, billing rules) with synthetic data.
 4. Obtain vendor documentation early; it gates VistaSoft/TRIOS work.
 5. Migration profiling once source systems and archive sizes are known.
