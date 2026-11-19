@@ -54,7 +54,12 @@ const baseSchema = z.object({
     .max(24 * 60)
     .default(15),
   /** Number of reverse-proxy hops to trust for client-IP derivation. 0 = trust none. */
-  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+  /**
+   * Reverse proxies in front of the API whose X-Forwarded-For is trusted (the web app's proxy counts as one,
+   * plus any load balancer). Unset = 0 in development; REQUIRED in production, because with 0 every user
+   * appears to come from the proxy's address (shared rate-limit bucket, meaningless audit IPs).
+   */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).optional(),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
   LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(10),
   SWAGGER_ENABLED: bool.optional(),
@@ -207,6 +212,14 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     problems.push(
       'MFA_ENCRYPTION_KEY: required when MFA is enforced (always the case in production unless explicitly disabled)',
     );
+  if (isProduction && e.TRUST_PROXY_HOPS === undefined)
+    problems.push(
+      'TRUST_PROXY_HOPS: must be set explicitly in production (number of trusted reverse proxies in front of the API; see docs/22)',
+    );
+  if (isProduction && e.TRUST_PROXY_HOPS === 0)
+    problems.push(
+      'TRUST_PROXY_HOPS: 0 is invalid in production because the web app always proxies API requests',
+    );
   if (e.SESSION_IDLE_TIMEOUT_MINUTES > e.SESSION_TTL_MINUTES)
     problems.push('SESSION_IDLE_TIMEOUT_MINUTES: must not exceed SESSION_TTL_MINUTES');
   if (problems.length) throw new EnvValidationError(problems);
@@ -223,7 +236,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     cookieSecure,
     loginMaxFailedAttempts: e.LOGIN_MAX_FAILED_ATTEMPTS,
     loginLockoutMinutes: e.LOGIN_LOCKOUT_MINUTES,
-    trustProxyHops: e.TRUST_PROXY_HOPS,
+    trustProxyHops: e.TRUST_PROXY_HOPS ?? 0,
     swaggerEnabled: e.SWAGGER_ENABLED ?? !isProduction,
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     loginRateLimitPerMinute: e.LOGIN_RATE_LIMIT_PER_MINUTE,

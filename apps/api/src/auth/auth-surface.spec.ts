@@ -63,4 +63,16 @@ describe('authentication attack surface', () => {
       ),
     ).toEqual([]);
   });
+
+  it('never builds SQL from strings: no unsafe raw-query APIs in application code, and raw queries are tagged templates only', () => {
+    const offenders = files
+      .filter((f) => /\$(queryRawUnsafe|executeRawUnsafe)/.test(read(f)))
+      .map((f) => f.replace(root, ''));
+    expect(offenders).toEqual([]);
+    // $queryRaw(...) / $executeRaw(...) called as a function (not a tagged template) would accept a concatenated string.
+    const called = files
+      .filter((f) => /\$(queryRaw|executeRaw)\s*\(/.test(read(f)))
+      .map((f) => f.replace(root, ''));
+    expect(called).toEqual([]);
+  });
 });

@@ -36,6 +36,7 @@ describe('loadEnv', () => {
       ...valid,
       NODE_ENV: 'production',
       MFA_ENCRYPTION_KEY: Buffer.alloc(32, 5).toString('base64'),
+      TRUST_PROXY_HOPS: '1',
     };
     expect(() =>
       loadEnv({ ...prod, COOKIE_SECURE: 'false', WEB_ORIGINS: 'https://app.example.com' }),
@@ -95,6 +96,7 @@ describe('MFA policy defaults and fail-safe behaviour', () => {
     NODE_ENV: 'production',
     DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
     WEB_ORIGINS: 'https://app.example.com',
+    TRUST_PROXY_HOPS: '1',
   };
   const key = Buffer.alloc(32, 3).toString('base64');
 
@@ -139,5 +141,30 @@ describe('MFA policy defaults and fail-safe behaviour', () => {
     };
     expect(loadEnv(dev).mfaRequiredRoles).toEqual([]);
     expect(loadEnv(dev).mfaPolicySource).toBe('development-default');
+  });
+});
+
+describe('TRUST_PROXY_HOPS', () => {
+  const base = {
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    WEB_ORIGINS: 'https://app.example.com',
+  };
+  const prod = {
+    ...base,
+    NODE_ENV: 'production',
+    MFA_ENCRYPTION_KEY: Buffer.alloc(32, 5).toString('base64'),
+  };
+  it('must be set deliberately in production (0 or missing would make every user share one IP)', () => {
+    expect(() => loadEnv(prod)).toThrow(/TRUST_PROXY_HOPS: must be set explicitly/);
+    expect(() => loadEnv({ ...prod, TRUST_PROXY_HOPS: '0' })).toThrow(
+      /TRUST_PROXY_HOPS: 0 is invalid/,
+    );
+    expect(loadEnv({ ...prod, TRUST_PROXY_HOPS: '2' }).trustProxyHops).toBe(2);
+  });
+  it('defaults to 0 outside production', () => {
+    expect(
+      loadEnv({ ...base, NODE_ENV: 'development', WEB_ORIGINS: 'http://localhost:3000' })
+        .trustProxyHops,
+    ).toBe(0);
   });
 });
