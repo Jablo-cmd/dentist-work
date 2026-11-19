@@ -35,6 +35,6 @@ or accounting sign-off.
 - **Time zone**: instants are stored in UTC; display uses the browser locale. The practice's
   operating time zone and working hours are not modelled, so bookings outside opening hours are
   not rejected.
-- **Currency**: a single currency; no multi-currency.
+- **Currency**: fixed to ZAR as a working assumption (Q12, unconfirmed); no multi-currency.
 - Clinical content correctness (e.g. valid clinical codes) is not validated beyond structure and
   FDI numbering.
