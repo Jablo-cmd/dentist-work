@@ -35,8 +35,9 @@ model Organisation {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-  practices Practice[]
-  users     User[]
+  practices    Practice[]
+  users        User[]
+  appointments Appointment[]
 
   @@map("organisations")
 }
@@ -54,6 +55,7 @@ model Practice {
   organisation    Organisation         @relation(fields: [organisationId], references: [id], onDelete: Restrict)
   roleAssignments UserRoleAssignment[]
   patientLinks    PatientPractice[]
+  appointments    Appointment[]
 
   @@unique([organisationId, code])
   @@unique([organisationId, name])
@@ -77,10 +79,12 @@ model User {
   createdAt          DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
 
-  organisation    Organisation         @relation(fields: [organisationId], references: [id], onDelete: Restrict)
-  roleAssignments UserRoleAssignment[]
-  sessions        Session[]
-  auditEvents     AuditEvent[]
+  organisation             Organisation         @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  roleAssignments          UserRoleAssignment[]
+  sessions                 Session[]
+  auditEvents              AuditEvent[]
+  practitionerAppointments Appointment[]        @relation("AppointmentPractitioner")
+  appointmentEvents        AppointmentEvent[]   @relation("AppointmentEventActor")
 
   @@index([organisationId])
   @@map("users")
@@ -207,6 +211,7 @@ model Patient {
   updatedAt             DateTime @updatedAt @db.Timestamptz(6)
 
   practices      PatientPractice[]
+  appointments   Appointment[]
   contacts       PatientContact[]
   revisions      PatientRevision[]
   historyEntries MedicalHistoryEntry[]
@@ -321,4 +326,74 @@ model PatientDuplicateFlag {
   @@unique([patientAId, patientBId])
   @@index([status])
   @@map("patient_duplicate_flags")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 3 — appointments
+// ---------------------------------------------------------------------------------------------
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentEventType {
+  CREATED
+  RESCHEDULED
+  CANCELLED
+  CHECKED_IN
+  COMPLETED
+  NO_SHOW
+}
+
+/// Overlap for the same practitioner or the same patient is rejected by exclusion constraints
+/// (see migration SQL), so concurrent requests cannot double-book.
+model Appointment {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId     String            @db.Uuid
+  practiceId         String            @db.Uuid
+  patientId          String            @db.Uuid
+  practitionerUserId String            @db.Uuid
+  startsAt           DateTime          @db.Timestamptz(6)
+  endsAt             DateTime          @db.Timestamptz(6)
+  status             AppointmentStatus @default(SCHEDULED)
+  /// Administrative reason only (e.g. "Check-up"); clinical detail belongs in the clinical record.
+  reason             String?
+  cancelReason       String?
+  createdByUserId    String?           @db.Uuid
+  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
+
+  organisation Organisation       @relation(fields: [organisationId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "appointments_organisation_fk")
+  practice     Practice           @relation(fields: [practiceId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "appointments_practice_fk")
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "appointments_patient_fk")
+  practitioner User               @relation("AppointmentPractitioner", fields: [practitionerUserId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "appointments_practitioner_fk")
+  events       AppointmentEvent[]
+
+  @@index([practiceId, startsAt])
+  @@index([practitionerUserId, startsAt])
+  @@index([patientId, startsAt])
+  @@map("appointments")
+}
+
+model AppointmentEvent {
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointmentId String               @db.Uuid
+  type          AppointmentEventType
+  actorUserId   String?              @db.Uuid
+  occurredAt    DateTime             @default(now()) @db.Timestamptz(6)
+  fromStartsAt  DateTime?            @db.Timestamptz(6)
+  fromEndsAt    DateTime?            @db.Timestamptz(6)
+  toStartsAt    DateTime?            @db.Timestamptz(6)
+  toEndsAt      DateTime?            @db.Timestamptz(6)
+  reason        String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  actor       User?       @relation("AppointmentEventActor", fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "appointment_events_actor_fk")
+
+  @@index([appointmentId, occurredAt])
+  @@map("appointment_events")
 }

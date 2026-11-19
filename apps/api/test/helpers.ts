@@ -50,7 +50,7 @@ export interface Fixtures {
 
 export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_events, sessions, user_role_assignments, users, practices, organisations, patients, patient_practices CASCADE',
+    'TRUNCATE TABLE appointment_events, appointments, audit_events, sessions, user_role_assignments, users, practices, organisations, patients, patient_practices CASCADE',
   );
   const org = await prisma.organisation.create({ data: { name: 'Synthetic Test Organisation' } });
   const [a, b] = await Promise.all([

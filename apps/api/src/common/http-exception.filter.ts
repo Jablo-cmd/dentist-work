@@ -21,6 +21,21 @@ const STATUS_TO_CODE: Record<number, ErrorCode> = {
   503: 'SERVICE_UNAVAILABLE',
 };
 
+interface BodyParserError {
+  status: number;
+  type: string;
+}
+function isBodyParserError(e: unknown): e is BodyParserError {
+  const x = e as Partial<BodyParserError> | null;
+  return (
+    !!x &&
+    typeof x.status === 'number' &&
+    x.status >= 400 &&
+    x.status < 500 &&
+    typeof x.type === 'string'
+  );
+}
+
 /** Domain exceptions can carry an explicit code to override the status-derived one. */
 export class CodedHttpException extends HttpException {
   constructor(
@@ -67,11 +82,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       code = STATUS_TO_CODE[status] ?? (status >= 500 ? 'INTERNAL_ERROR' : 'VALIDATION_FAILED');
-      // Use a fixed, generic message per status so framework-internal text never leaks.
-      message =
-        status === 404 ? 'Resource not found.' : status === 403 ? 'Access denied.' : message;
       if (status === 401) message = 'Authentication required.';
-      if (status >= 500) message = 'An unexpected error occurred.';
+      else if (status === 403) message = 'Access denied.';
+      else if (status === 404) message = 'Resource not found.';
+      else if (status >= 500) message = 'An unexpected error occurred.';
+      // 400/409 etc.: messages are authored by this codebase for the user (e.g. "That practitioner is
+      // already booked"), so they are passed through.
+      else message = exception.message;
+    } else if (isBodyParserError(exception)) {
+      // Malformed JSON / oversized body raised by Express' body parser (not a Nest exception).
+      status = exception.status;
+      code = 'VALIDATION_FAILED';
+      message =
+        status === 413 ? 'The request body is too large.' : 'The request body could not be read.';
     }
 
     if (status >= 500) {

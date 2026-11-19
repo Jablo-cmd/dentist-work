@@ -69,6 +69,32 @@ describe('API (integration, real PostgreSQL)', () => {
         .expect(404);
       expect(res.body.error).toMatchObject({ code: 'NOT_FOUND', requestId: 'client-req-12345' });
     });
+    it('answers malformed and oversized bodies with 4xx envelopes, not 500s', async () => {
+      const bad = await http()
+        .post('/api/v1/auth/login')
+        .set('Origin', ORIGIN)
+        .set('Content-Type', 'application/json')
+        .send('{"email": ');
+      expect(bad.status).toBe(400);
+      expect(bad.body.error.code).toBe('VALIDATION_FAILED');
+      const big = await http()
+        .post('/api/v1/auth/login')
+        .set('Origin', ORIGIN)
+        .send({ email: 'a@b.co', password: 'x'.repeat(200_000) });
+      expect(big.status).toBe(413);
+      expect(big.body.error.requestId).toBeTruthy();
+    });
+
+    it('passes through authored client-error messages (409) to the caller', async () => {
+      const { agent } = await loginAgent(app, fx.users.owner.email);
+      const res = await agent
+        .post('/api/v1/practices')
+        .set('Origin', ORIGIN)
+        .send({ name: 'Synthetic Practice A', code: 'NEW-CODE' })
+        .expect(409);
+      expect(res.body.error.message).toMatch(/already exists/);
+    });
+
     it('rejects unauthenticated access to protected routes', async () => {
       const res = await http().get('/api/v1/practices').expect(401);
       expect(res.body.error.code).toBe('UNAUTHENTICATED');

@@ -2,6 +2,7 @@
 
 import {
   Building2,
+  CalendarDays,
   CopyCheck,
   KeyRound,
   LayoutDashboard,
@@ -31,6 +32,12 @@ const NAV: { href: string; label: string; icon: LucideIcon; permission?: Permiss
     label: 'Duplicate review',
     icon: CopyCheck,
     permission: 'patient.update',
+  },
+  {
+    href: '/appointments',
+    label: 'Appointments',
+    icon: CalendarDays,
+    permission: 'appointment.read',
   },
   { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
   { href: '/change-password', label: 'Password', icon: KeyRound },

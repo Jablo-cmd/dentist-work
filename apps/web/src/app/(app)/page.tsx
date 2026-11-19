@@ -22,8 +22,8 @@ const ROLE_LABEL: Record<string, string> = {
 const MODULES: { name: string; status: 'Available' | 'Planned' | 'Awaiting vendor' }[] = [
   { name: 'Sign-in, roles and practice access', status: 'Available' },
   { name: 'Practices and staff management', status: 'Available' },
-  { name: 'Patient administration', status: 'Planned' },
-  { name: 'Appointments', status: 'Planned' },
+  { name: 'Patient administration, medical history and duplicate review', status: 'Available' },
+  { name: 'Appointments', status: 'Available' },
   { name: 'Clinical records and charting', status: 'Planned' },
   { name: 'Imaging', status: 'Planned' },
   { name: 'VistaSoft / 3Shape TRIOS integration', status: 'Awaiting vendor' },
