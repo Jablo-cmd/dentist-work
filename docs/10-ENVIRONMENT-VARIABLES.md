@@ -44,6 +44,6 @@ CLI-only: `DPMS_BOOTSTRAP_PASSWORD` (see docs/09). Import tool: see docs/16. Tes
 
 ## Web
 
-| Variable           | Default                 | Notes                                                                  |
-| ------------------ | ----------------------- | ---------------------------------------------------------------------- |
-| `API_INTERNAL_URL` | `http://localhost:4000` | Used by the Next.js server to proxy `/api/*`; evaluated at build/start |
+| Variable           | Default                 | Notes                                                                                                              |
+| ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `API_INTERNAL_URL` | `http://localhost:4000` | Read **at runtime** by the web server's proxy route (`src/app/api/[...path]`), so one build serves any environment |

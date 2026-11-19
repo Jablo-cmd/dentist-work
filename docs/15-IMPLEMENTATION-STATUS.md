@@ -11,6 +11,7 @@ Last updated: modules delivery (2026-11-19). Status words follow docs/README.
 - **Clinical:** encounters, versioned notes with finalise/amend/addendum, FDI dental chart, treatment plans with status workflow.
 - **Imaging:** private S3-compatible storage adapter, validated uploads, authorised/audited downloads (needs storage configured; otherwise reports unavailable).
 - **Billing and reporting:** invoices, credit notes, payments with allocation/reversal, patient account, financial and operational reports.
+- **Quality and operations:** committed browser e2e + accessibility suite in CI; audit-trail viewer; database backup/restore tooling with a verified drill (docs/17).
 - **Migration tooling:** patient CSV import with dry-run, duplicate holding and reconciliation report (docs/16).
 
 ## In progress
@@ -19,7 +20,7 @@ None.
 
 ## Proposed (documented, not built)
 
-Patient record merge; user self-service password reset/email; WebAuthn/passkeys; committed browser e2e suite; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
+Patient record merge; user self-service password reset/email; WebAuthn/passkeys; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
 
 ## Awaiting client confirmation
 

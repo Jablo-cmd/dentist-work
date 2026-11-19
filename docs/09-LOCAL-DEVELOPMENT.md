@@ -55,6 +55,7 @@ Imaging needs an S3-compatible bucket. Any private bucket works (e.g. MinIO via 
 | `pnpm test`                         | Unit tests (contracts, api, web) — no database needed                                                    |
 | `pnpm test:integration`             | API against real PostgreSQL (`TEST_DATABASE_URL`, default `dpms_test`; migrations must be applied to it) |
 | `pnpm db:validate`                  | Migrations vs schema drift check (needs `SHADOW_DATABASE_URL`)                                           |
+| `pnpm test:e2e`                     | Browser end-to-end + accessibility (needs the `dpms_e2e` database and built apps; see docs/14)           |
 | `pnpm build`                        | Production builds                                                                                        |
 | `pnpm audit:deps`                   | Production dependency vulnerability audit                                                                |
 

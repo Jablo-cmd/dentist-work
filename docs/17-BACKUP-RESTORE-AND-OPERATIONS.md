@@ -14,6 +14,8 @@ Status: **Database backup/restore tooling implemented and drilled locally** (`op
 DATABASE_URL=postgresql://… ADMIN_DATABASE_URL=postgresql://admin@host/postgres ./ops/restore-drill.sh
 ```
 
+**Drill evidence (developer machine, synthetic data):** backup → restore into a scratch database → row counts identical across all 31 tables; encrypted backups contain no plaintext markers and restore with the passphrase; a tampered backup is refused before any database is created; restore refuses an existing database. This is _not_ evidence for the production environment.
+
 A backup is not a backup until a restore has been demonstrated: run the drill after setup, after schema changes, and on a regular schedule. Keep the output as pre-production evidence (docs/05).
 
 ## Not covered — must be designed before go-live
