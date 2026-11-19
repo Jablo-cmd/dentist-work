@@ -21,6 +21,8 @@ export const readinessSchema = z.object({
       status: dependencyStatusSchema,
       latencyMs: z.number().nullable(),
     }),
+    /** Informational: private object storage. `not_configured` is not a failure; imaging is simply unavailable. */
+    storage: z.object({ status: z.enum(['up', 'down', 'not_configured']) }).optional(),
   }),
 });
 export type Readiness = z.infer<typeof readinessSchema>;

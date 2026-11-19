@@ -45,6 +45,14 @@ const baseSchema = z.object({
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
   LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(10),
   SWAGGER_ENABLED: bool.optional(),
+  // Private S3-compatible object storage (imaging). All-or-nothing; leave unset to disable imaging.
+  STORAGE_ENDPOINT: z.string().url().optional(),
+  STORAGE_REGION: z.string().min(1).optional(),
+  STORAGE_BUCKET: z.string().min(3).optional(),
+  STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
+  STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  STORAGE_FORCE_PATH_STYLE: bool.optional(),
+  IMAGING_MAX_BYTES: z.coerce.number().int().min(1024).max(100_000_000).default(25_000_000),
 });
 
 export type Env = {
@@ -63,7 +71,19 @@ export type Env = {
   swaggerEnabled: boolean;
   rateLimitPerMinute: number;
   loginRateLimitPerMinute: number;
+  /** null = object storage not configured (imaging disabled). */
+  storage: StorageConfig | null;
+  imagingMaxBytes: number;
 };
+
+export interface StorageConfig {
+  endpoint?: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
+}
 
 export class EnvValidationError extends Error {
   constructor(public readonly problems: string[]) {
@@ -95,6 +115,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     if (e.SWAGGER_ENABLED === true)
       problems.push('SWAGGER_ENABLED: must not be enabled in production without explicit review');
   }
+  const storageVars = [
+    e.STORAGE_BUCKET,
+    e.STORAGE_REGION,
+    e.STORAGE_ACCESS_KEY_ID,
+    e.STORAGE_SECRET_ACCESS_KEY,
+  ];
+  const storageSet = storageVars.filter((v) => v !== undefined).length;
+  if (storageSet > 0 && storageSet < storageVars.length)
+    problems.push(
+      'STORAGE_*: STORAGE_BUCKET, STORAGE_REGION, STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY must be set together',
+    );
+  if (isProduction && e.STORAGE_ENDPOINT && !e.STORAGE_ENDPOINT.startsWith('https://'))
+    problems.push('STORAGE_ENDPOINT: must be https:// in production');
   if (e.SESSION_IDLE_TIMEOUT_MINUTES > e.SESSION_TTL_MINUTES)
     problems.push('SESSION_IDLE_TIMEOUT_MINUTES: must not exceed SESSION_TTL_MINUTES');
   if (problems.length) throw new EnvValidationError(problems);
@@ -115,6 +148,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     swaggerEnabled: e.SWAGGER_ENABLED ?? !isProduction,
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     loginRateLimitPerMinute: e.LOGIN_RATE_LIMIT_PER_MINUTE,
+    imagingMaxBytes: e.IMAGING_MAX_BYTES,
+    storage:
+      storageSet === storageVars.length
+        ? {
+            endpoint: e.STORAGE_ENDPOINT,
+            region: e.STORAGE_REGION!,
+            bucket: e.STORAGE_BUCKET!,
+            accessKeyId: e.STORAGE_ACCESS_KEY_ID!,
+            secretAccessKey: e.STORAGE_SECRET_ACCESS_KEY!,
+            forcePathStyle: e.STORAGE_FORCE_PATH_STYLE ?? false,
+          }
+        : null,
   };
 }
 

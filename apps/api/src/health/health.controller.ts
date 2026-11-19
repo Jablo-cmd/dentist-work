@@ -1,10 +1,11 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Inject, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { Liveness, Readiness } from '@dpms/contracts';
 import { Public } from '../auth/decorators';
 import { PrismaService } from '../prisma/prisma.service';
+import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object-storage';
 import { APP_VERSION } from '../version';
 
 const DB_TIMEOUT_MS = 2000;
@@ -14,7 +15,10 @@ const DB_TIMEOUT_MS = 2000;
 @SkipThrottle({ default: true, login: true })
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+  ) {}
 
   /** Liveness: process is running. Never touches dependencies. */
   @Get()
@@ -44,12 +48,14 @@ export class HealthController {
     } catch {
       up = false; // details deliberately not exposed
     }
+    const storage = await this.storage.check().catch(() => 'down' as const);
     if (!up) res.status(HttpStatus.SERVICE_UNAVAILABLE);
     return {
       status: up ? 'ready' : 'not_ready',
       timestamp: new Date().toISOString(),
       checks: {
         database: { status: up ? 'up' : 'down', latencyMs: up ? Date.now() - started : null },
+        storage: { status: storage },
       },
     };
   }

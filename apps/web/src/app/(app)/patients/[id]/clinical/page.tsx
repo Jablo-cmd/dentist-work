@@ -9,6 +9,8 @@ import {
   createTreatmentPlanRequestSchema,
   encounterSchema,
   encounterSummarySchema,
+  imagingAssetSchema,
+  IMAGING_MODALITIES,
   paginatedSchema,
   practiceSchema,
   treatmentPlanSchema,
@@ -105,6 +107,7 @@ export default function ClinicalPage() {
       <Encounters patientId={id} />
       <Chart patientId={id} />
       <Plans patientId={id} />
+      {can(state.user, 'imaging.view') && <Imaging patientId={id} />}
     </div>
   );
 }
@@ -675,6 +678,116 @@ function Plans({ patientId }: { patientId: string }) {
             <div>
               <Button type="submit" size="sm">
                 Create plan
+              </Button>
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+function Imaging({ patientId }: { patientId: string }) {
+  const { state } = useSession();
+  const { notify } = useToast();
+  const assets = useApi(
+    (s) => apiFetch(`/patients/${patientId}/imaging`, z.array(imagingAssetSchema), { signal: s }),
+    [patientId],
+  );
+  const practices = useApi((s) =>
+    apiFetch('/practices?pageSize=100', paginatedSchema(practiceSchema), { signal: s }),
+  );
+  const [busy, setBusy] = useState(false);
+  if (state.status !== 'authenticated') return null;
+
+  async function upload(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setBusy(true);
+    try {
+      await apiFetch(`/patients/${patientId}/imaging`, imagingAssetSchema, {
+        method: 'POST',
+        body: new FormData(form),
+      });
+      notify('success', 'File uploaded.');
+      form.reset();
+      assets.reload();
+    } catch (err) {
+      notify('error', describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Imaging and documents</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Accepted: JPEG, PNG, PDF, DICOM (checked by file content, max 25 MB). Files are not
+          virus-scanned yet. Every view and download is audited and re-checked against your
+          permissions.
+        </p>
+        {assets.status === 'error' && <ErrorState error={assets.error} onRetry={assets.reload} />}
+        {assets.status === 'success' && (
+          <ul className="divide-y text-sm">
+            {assets.data.length === 0 && (
+              <li className="py-2 text-muted-foreground">No files stored.</li>
+            )}
+            {assets.data.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <span>
+                  <span className="font-medium">{a.originalFilename}</span> · {human(a.modality)} ·{' '}
+                  {(a.sizeBytes / 1024).toFixed(0)} KB · {stamp(a.uploadedAt)}
+                </span>
+                <a
+                  className="text-primary underline"
+                  href={`/api/v1/imaging/${a.id}/file`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {a.mimeType.startsWith('image/') ? 'View' : 'Download'}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+        {can(state.user, 'imaging.upload') && practices.status === 'success' && (
+          <form onSubmit={upload} className="grid gap-3 border-t pt-4 sm:grid-cols-2">
+            <Field id="im-file" label="File">
+              <Input
+                id="im-file"
+                name="file"
+                type="file"
+                accept="image/jpeg,image/png,application/pdf,.dcm"
+                required
+              />
+            </Field>
+            <Field id="im-mod" label="Type">
+              <Select id="im-mod" name="modality">
+                {IMAGING_MODALITIES.map((m) => (
+                  <option key={m} value={m}>
+                    {human(m)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field id="im-prac" label="Practice">
+              <Select id="im-prac" name="practiceId">
+                {practices.data.data
+                  .filter((p) => p.isActive)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
+            <div className="flex items-end">
+              <Button type="submit" size="sm" disabled={busy}>
+                {busy ? 'Uploading…' : 'Upload'}
               </Button>
             </div>
           </form>

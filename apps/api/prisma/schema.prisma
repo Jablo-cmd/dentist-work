@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model Organisation {
+  imagingAssets  ImagingAsset[]
   encounters     ClinicalEncounter[]
   treatmentPlans TreatmentPlan[]
   id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -45,6 +46,7 @@ model Organisation {
 }
 
 model Practice {
+  imagingAssets  ImagingAsset[]
   encounters     ClinicalEncounter[]
   treatmentPlans TreatmentPlan[]
   id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -192,6 +194,7 @@ enum DuplicateStatus {
 }
 
 model Patient {
+  imagingAssets         ImagingAsset[]
   encounters            ClinicalEncounter[]
   chartEntries          DentalChartEntry[]
   treatmentPlans        TreatmentPlan[]
@@ -565,4 +568,52 @@ model TreatmentPlanItemEvent {
 
   @@index([itemId, occurredAt])
   @@map("treatment_plan_item_events")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 5 — imaging metadata. Binary files live in private object storage, never in PostgreSQL.
+// ---------------------------------------------------------------------------------------------
+
+enum ImagingModality {
+  XRAY_INTRAORAL
+  XRAY_PANORAMIC
+  XRAY_CEPHALOMETRIC
+  PHOTO
+  DOCUMENT
+  SCAN_3D
+  OTHER
+}
+
+enum ScanStatus {
+  NOT_SCANNED
+}
+
+/// Immutable metadata (DB trigger). Retention/deletion rules are an open client decision (Q20),
+/// so assets cannot be deleted through the application.
+model ImagingAsset {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId   String          @db.Uuid
+  practiceId       String          @db.Uuid
+  patientId        String          @db.Uuid
+  encounterId      String?         @db.Uuid
+  modality         ImagingModality
+  mimeType         String
+  originalFilename String
+  sizeBytes        Int
+  sha256           String
+  /// Opaque key (imaging/<org>/<uuid>); contains no patient information.
+  objectKey        String          @unique
+  source           String          @default("manual_upload")
+  scanStatus       ScanStatus      @default(NOT_SCANNED)
+  acquiredAt       DateTime?       @db.Timestamptz(6)
+  uploadedByUserId String          @db.Uuid
+  uploadedAt       DateTime        @default(now()) @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  practice     Practice     @relation(fields: [practiceId], references: [id], onDelete: Restrict)
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@unique([patientId, sha256])
+  @@index([patientId, uploadedAt])
+  @@map("imaging_assets")
 }
