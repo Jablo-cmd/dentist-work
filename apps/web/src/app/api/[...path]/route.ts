@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { safeTarget } from '@/lib/proxy-target';
 
 /**
  * Same-origin proxy to the API (ADR-0002 #5). Implemented as a route handler rather than a
@@ -29,7 +30,13 @@ async function proxy(
 ): Promise<Response> {
   const base = (process.env.API_INTERNAL_URL ?? 'http://localhost:4000').replace(/\/$/, '');
   const { path } = await ctx.params;
-  const target = `${base}/api/${path.map(encodeURIComponent).join('/')}${req.nextUrl.search}`;
+  const target = safeTarget(base, path, req.nextUrl.search);
+  if (!target) {
+    return Response.json(
+      { error: { code: 'NOT_FOUND', message: 'Resource not found.', requestId: 'proxy' } },
+      { status: 404 },
+    );
+  }
 
   const headers = new Headers();
   req.headers.forEach((v, k) => {
