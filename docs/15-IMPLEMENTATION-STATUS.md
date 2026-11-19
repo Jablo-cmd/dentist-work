@@ -9,7 +9,8 @@ Last updated: modules delivery (2026-11-19). Status words follow docs/README.
 - **Patients:** registration with validation, practice-scoped access and explicit cross-practice linking, search, revisions, emergency contacts, medical history and allergies (append-only), duplicate candidates with human review.
 - **Appointments:** day/week calendar, booking, reschedule, cancel, check-in/complete/no-show, history, DB-enforced conflict prevention.
 - **Clinical:** encounters, versioned notes with finalise/amend/addendum, FDI dental chart, treatment plans with status workflow.
-- **Imaging:** private S3-compatible storage adapter, validated uploads, authorised/audited downloads (needs storage configured; otherwise reports unavailable).
+- **Imaging:** private S3-compatible storage adapter, validated uploads, quarantine-by-default malware scanning (fail closed), authorised/audited downloads (needs storage and a clamd scanner configured; otherwise reports unavailable and nothing is downloadable).
+- **Security hardening (2026-11-19):** MFA policy enforced in production, systematic authorisation matrix, LIKE-wildcard fix, web-proxy traversal guard, `TRUST_PROXY_HOPS` requirement, least-privilege DB role in CI — see docs/18. Validation edge cases — docs/19. Load test — docs/21. Operations readiness and restore drill — docs/22. POPIA readiness — docs/23. Traceability — docs/24. Decisions — docs/25.
 - **Billing and reporting:** invoices, credit notes, payments with allocation/reversal, patient account, financial and operational reports.
 - **Documents:** printable invoices, credit notes and account statements (browser print / save as PDF; layout is a working default pending the accountant's legal wording, Q12).
 - **Quality and operations:** committed browser e2e + accessibility suite in CI; audit-trail viewer; database backup/restore tooling with a verified drill (docs/17).
@@ -21,7 +22,7 @@ None.
 
 ## Proposed (documented, not built)
 
-Patient record merge; user self-service password reset/email; WebAuthn/passkeys; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; server-generated PDFs and e-mailing of invoices/statements; patient-level data export; imaging/clinical/billing history migration.
+Patient record merge; user self-service password reset/email; WebAuthn/passkeys; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; server-generated PDFs and e-mailing of invoices/statements; patient-level data export; imaging/clinical/billing history migration.
 
 ## Awaiting client confirmation
 

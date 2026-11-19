@@ -32,6 +32,12 @@ Defects found by these tests and fixed during development are recorded in the co
 
 CI (`.github/workflows/ci.yml`): lint → format → typecheck → unit → migrate from scratch → drift check → integration → build → dependency audit.
 
+Additions (see docs/18, 19, 21): integration suite is run a second time as the least-privilege
+`dpms_app` role (`ops/db-roles.sql`, `ops/verify-db-roles.sh`); `authz-matrix.int-spec.ts` sweeps every
+route; `validation.int-spec.ts` covers money, treatment-link and appointment-time edge cases;
+`ops/load/` holds the (manual, not CI) load test. The dependency audit gates **production**
+dependencies only; four advisories remain in the test-only `s3rver` emulator (accepted, docs/18 S-16).
+
 **Browser end-to-end and accessibility suite (committed, runs in CI):** `e2e/` (Playwright + axe-core) starts the real API, web app, PostgreSQL and an S3-compatible server on isolated ports/database with synthetic data. The suite covers: the full practice workflow (practice and staff set-up, registration, duplicate review, medical history, clinical note draft/finalise/amend, chart, treatment plan, imaging upload and authorised download, appointment booking and conflict protection, check-in, invoice/payment/reversal, reports, audit trail, forced password change, role-limited navigation), MFA enrolment/sign-in/recovery codes, automated WCAG 2.1 A/AA scans of every page (no serious or critical violations), a keyboard skip-link check, security headers, CSRF and unauthenticated access. Run locally with `pnpm test:e2e` (set `PW_CHROMIUM_PATH` to reuse an installed Chromium; the database `dpms_e2e` must exist and is wiped on every run).
 
 Accessibility note: automated scans catch only part of the problems. **Manual keyboard and screen-reader testing, and review by users with access needs, remain to do.**

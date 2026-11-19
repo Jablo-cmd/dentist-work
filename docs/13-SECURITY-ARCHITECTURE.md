@@ -40,7 +40,8 @@ TOTP (RFC 6238, verified against the RFC test vectors). Secrets AES-256-GCM encr
 ## Not implemented yet (do not assume)
 
 - **MFA enforcement policy** — the capability is implemented (below), but _who must use it_ is a client decision (`MFA_REQUIRED_ROLES` is empty by default). Recommended: require it for every privileged role before go-live. SMS/e-mail codes and WebAuthn/passkeys are not implemented.
-- **Malware scanning of uploads** — no scanner is deployed; assets are honestly marked `NOT_SCANNED` (API and UI).
+- **Malware scanning of uploads** — implemented in code as quarantine-by-default and fail-closed (clamd client; downloads only when `CLEAN`; docs/18 S-05). A real clamd must be deployed and monitored before real data; until then uploads stay `PENDING`/`SCAN_FAILED` and cannot be downloaded.
+- **Least-privilege database role** — `ops/db-roles.sql` creates a role without `TRUNCATE`/DDL; CI runs the whole integration suite as that role. Production provisioning is the operator's task (`ops/verify-db-roles.sh`).
 - STL/PLY 3D scan formats, DICOM _processing/viewing_ (files are stored and downloaded only), vendor imports, reconciliation queue (requires vendor integrations).
 - Patient record **merging** (duplicates are recorded and reviewed only), patient-facing reminders/communications, medical aid claims (out of scope).
 - Password reset by email/self-service (admin reset only), session listing UI.
