@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import {
   auditEventsQuerySchema,
@@ -23,7 +24,22 @@ export class AuditController {
     @CurrentPrincipal() p: Principal,
   ): Promise<Paginated<AuditEvent>> {
     // Tenant boundary: only this organisation's events (events without an org are never listed).
-    const where = { organisationId: p.organisationId, ...(q.action ? { action: q.action } : {}) };
+    const where: Prisma.AuditEventWhereInput = {
+      organisationId: p.organisationId,
+      ...(q.action ? { action: { startsWith: q.action } } : {}),
+      ...(q.outcome ? { outcome: q.outcome } : {}),
+      ...(q.actorUserId ? { actorUserId: q.actorUserId } : {}),
+      ...(q.from || q.to
+        ? {
+            occurredAt: {
+              ...(q.from ? { gte: new Date(`${q.from}T00:00:00Z`) } : {}),
+              ...(q.to
+                ? { lt: new Date(new Date(`${q.to}T00:00:00Z`).getTime() + 86_400_000) }
+                : {}),
+            },
+          }
+        : {}),
+    };
     const [total, rows] = await Promise.all([
       this.prisma.auditEvent.count({ where }),
       this.prisma.auditEvent.findMany({
@@ -31,6 +47,7 @@ export class AuditController {
         orderBy: { occurredAt: 'desc' },
         skip: (q.page - 1) * q.pageSize,
         take: q.pageSize,
+        include: { actor: { select: { displayName: true } } },
       }),
     ]);
     return {
@@ -38,6 +55,7 @@ export class AuditController {
         id: r.id,
         occurredAt: r.occurredAt.toISOString(),
         actorUserId: r.actorUserId,
+        actorName: r.actor?.displayName ?? null,
         practiceId: r.practiceId,
         action: r.action,
         targetType: r.targetType,

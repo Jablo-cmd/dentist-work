@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CopyCheck,
   KeyRound,
+  ScrollText,
   ShieldCheck,
   LayoutDashboard,
   LogOut,
@@ -53,6 +54,7 @@ const NAV: {
     permission: ['appointment.read', 'financial_report.read'],
   },
   { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
+  { href: '/audit', label: 'Audit trail', icon: ScrollText, permission: 'audit.read' },
   { href: '/change-password', label: 'Password', icon: KeyRound },
   { href: '/security', label: 'Two-factor', icon: ShieldCheck },
 ];
