@@ -57,6 +57,19 @@ jobs:
         run: pnpm db:validate
       - name: Integration tests (real PostgreSQL)
         run: pnpm test:integration
+      - name: Create least-privilege application database role
+        run: |
+          psql "postgresql://dpms:ci_only_password@localhost:5432/dpms_test" \
+            -v app_role=dpms_app -v app_password=ci_app_only_password -v dbname=dpms_test -f ops/db-roles.sql
+      - name: Verify least-privilege role (cannot wipe audit/clinical history or TRUNCATE)
+        run: |
+          ADMIN_DATABASE_URL="postgresql://dpms:ci_only_password@localhost:5432/dpms_test" \
+          APP_DATABASE_URL="postgresql://dpms_app:ci_app_only_password@localhost:5432/dpms_test" \
+          ./ops/verify-db-roles.sh
+      - name: Integration tests again, with the API connecting as the least-privilege role
+        env:
+          TEST_APP_DATABASE_URL: postgresql://dpms_app:ci_app_only_password@localhost:5432/dpms_test?schema=public
+        run: pnpm test:integration
       - name: Production build
         run: pnpm build
       - name: Dependency vulnerability audit (production deps)

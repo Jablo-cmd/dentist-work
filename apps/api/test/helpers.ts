@@ -17,7 +17,9 @@ export const TEST_DATABASE_URL =
 export function testEnv(overrides: Record<string, string | undefined> = {}) {
   return {
     NODE_ENV: 'test',
-    DATABASE_URL: TEST_DATABASE_URL,
+    // The application connects as TEST_APP_DATABASE_URL when set (least-privilege role, ops/db-roles.sql);
+    // fixtures and cleanup always use the owner connection.
+    DATABASE_URL: process.env.TEST_APP_DATABASE_URL ?? TEST_DATABASE_URL,
     WEB_ORIGINS: ORIGIN,
     LOG_LEVEL: 'silent',
     RATE_LIMIT_PER_MINUTE: '10000',
