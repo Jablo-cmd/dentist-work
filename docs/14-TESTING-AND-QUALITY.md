@@ -10,7 +10,7 @@ Status: **Implemented** for the foundation scope.
 | Web unit/component   | Vitest + Testing Library           | `apps/web/src/**/*.test.ts(x)`                                                                                            | —                            |
 | Migration validation | `prisma migrate diff` vs shadow DB | `pnpm db:validate`                                                                                                        | PostgreSQL                   |
 
-Counts at this delivery: contracts 7, API unit 38, API integration 126 (real PostgreSQL), web 11.
+Counts at this delivery: contracts 7, API unit 51, API integration 140 (real PostgreSQL), web 11. MFA coverage includes RFC vectors, replay, brute-force limits, concurrent challenge use, encryption at rest, recovery codes, disable, admin reset and role enforcement.
 
 Integration coverage includes: health/readiness (DB down → 503 without leaks; storage informational), security headers, CORS, CSRF, error envelopes (incl. malformed/oversized bodies), login/lockout/idle expiry/deactivation/forced password change, enumeration resistance, rate limiting; user-management privilege boundaries; patient isolation (IDOR), duplicate handling, audit contents (no personal data); appointment conflicts **including concurrent bookings**; clinical lifecycle locks (API and DB), amendments, concurrent draft saves, role denial; imaging against a real S3-compatible server (byte-for-byte round trip, content sniffing, duplicates, permission re-check); billing exactness, gap-free numbering under concurrency, idempotent payments (sequential and concurrent), over-allocation/over-credit races, reversals, reports; patient import dry-run/commit/re-run; and the database immutability triggers.
 

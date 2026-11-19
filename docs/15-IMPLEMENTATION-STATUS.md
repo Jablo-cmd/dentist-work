@@ -19,7 +19,7 @@ None.
 
 ## Proposed (documented, not built)
 
-Patient record merge; user self-service password reset/email; MFA; committed browser e2e suite; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
+Patient record merge; user self-service password reset/email; WebAuthn/passkeys; committed browser e2e suite; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
 
 ## Awaiting client confirmation
 
@@ -27,7 +27,7 @@ Patient record merge; user self-service password reset/email; MFA; committed bro
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Q04 final roles/permissions                                | Current mapping is a conservative default (apps/api/src/access/permissions.ts)             |
 | Q05 cross-practice visibility                              | Implemented strictly (explicit link only)                                                  |
-| **MFA policy and method**                                  | Required before any real user                                                              |
+| **MFA enforcement policy** (which roles must use it)       | Capability built; set `MFA_REQUIRED_ROLES` once decided                                    |
 | Q02 practice details                                       | Practices are created by the owner in the UI                                               |
 | Q12 billing: tax, invoice numbering/format, rounding       | Tax is entered not calculated; `INV-`/`CN-` numbering and half-up rounding are assumptions |
 | Q13 reminders (consent/channels)                           | Not built                                                                                  |
@@ -54,7 +54,7 @@ VistaSoft (Q07) and 3Shape TRIOS (Q08). Only interface definitions exist (`apps/
 
 ## Risks and recommended next steps
 
-1. Resolve MFA, roles (Q04), retention (Q20) and hosting (Q18/Q19) — these gate real data.
+1. Decide MFA enforcement (which roles), roles (Q04), retention (Q20) and hosting (Q18/Q19) — these gate real data.
 2. Security review and penetration test; restore drill; commit browser e2e to CI.
 3. Client UAT of workflows and terminology (notation, templates, billing rules) with synthetic data.
 4. Obtain vendor documentation early; it gates VistaSoft/TRIOS work.
