@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { E2E } from '../env';
 import { signIn, signOut, toast, tomorrow } from '../helpers';
@@ -193,6 +194,34 @@ test('billing: invoice, payment, reversal; reports reflect it', async ({ page })
   await page.getByRole('button', { name: 'Reverse' }).click();
   await toast(page, /Payment reversed/);
   await expect(page.getByText('Patient owes')).toBeVisible();
+
+  // Printable documents: statement balance matches the account, invoice shows its lines; both accessible.
+  await page.goto(`${patientUrl}/statement`);
+  await expect(page.getByTestId('statement-balance')).toContainText(/Amount due: R\s450[,.]00/);
+  await expect(page.getByText('Reversed — not counted')).toBeVisible();
+  const axe = (label: string) =>
+    new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze()
+      .then((r) =>
+        expect(
+          r.violations
+            .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+            .map((v) => v.id),
+          label,
+        ).toEqual([]),
+      );
+  await axe('statement');
+  await page.goto(`${patientUrl}/billing`);
+  await page
+    .getByRole('link', { name: /View \/ print invoice/ })
+    .first()
+    .click();
+  await expect(page.getByRole('article', { name: /Invoice INV-\d{6}/ })).toContainText(
+    'E2E consultation',
+  );
+  await expect(page.getByRole('button', { name: 'Print / save as PDF' })).toBeVisible();
+  await axe('invoice document');
 
   await page.goto('/reports');
   await expect(page.getByText('Financial summary')).toBeVisible();

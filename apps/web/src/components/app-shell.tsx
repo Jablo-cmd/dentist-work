@@ -123,9 +123,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr]">
+    <div className="min-h-screen lg:grid lg:grid-cols-[15rem_1fr] print:block">
       <aside
-        className={cn('bg-sidebar p-4 text-sidebar-foreground lg:block', open ? 'block' : 'hidden')}
+        className={cn(
+          'bg-sidebar p-4 text-sidebar-foreground print:hidden lg:block',
+          open ? 'block' : 'hidden',
+        )}
       >
         <div className="mb-6 hidden px-3 lg:block">
           <p className="font-semibold text-white">Noordwyk Dental</p>
@@ -134,7 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {nav}
       </aside>
       <div className="flex min-w-0 flex-col">
-        <header className="flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
+        <header className="print:hidden flex h-14 items-center justify-between gap-3 border-b bg-card px-4">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

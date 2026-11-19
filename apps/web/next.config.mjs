@@ -5,6 +5,7 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'no-referrer' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
   // Next.js needs inline styles/scripts for hydration; tighten with nonces when the deployment target is fixed.
   {
     key: 'Content-Security-Policy',
@@ -18,6 +19,11 @@ const securityHeaders = [
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      "object-src 'none'",
+      "worker-src 'self'",
+      "manifest-src 'self'",
+      // In production the site must be served over HTTPS; make browsers upgrade any stray http:// subresource.
+      ...(process.env.NODE_ENV === 'production' ? ['upgrade-insecure-requests'] : []),
     ].join('; '),
   },
 ];

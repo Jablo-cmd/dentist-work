@@ -11,6 +11,7 @@ Last updated: modules delivery (2026-11-19). Status words follow docs/README.
 - **Clinical:** encounters, versioned notes with finalise/amend/addendum, FDI dental chart, treatment plans with status workflow.
 - **Imaging:** private S3-compatible storage adapter, validated uploads, authorised/audited downloads (needs storage configured; otherwise reports unavailable).
 - **Billing and reporting:** invoices, credit notes, payments with allocation/reversal, patient account, financial and operational reports.
+- **Documents:** printable invoices, credit notes and account statements (browser print / save as PDF; layout is a working default pending the accountant's legal wording, Q12).
 - **Quality and operations:** committed browser e2e + accessibility suite in CI; audit-trail viewer; database backup/restore tooling with a verified drill (docs/17).
 - **Migration tooling:** patient CSV import with dry-run, duplicate holding and reconciliation report (docs/16).
 
@@ -20,7 +21,7 @@ None.
 
 ## Proposed (documented, not built)
 
-Patient record merge; user self-service password reset/email; WebAuthn/passkeys; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; invoice PDF/printing; statement generation; patient-level data export; imaging/clinical/billing history migration.
+Patient record merge; user self-service password reset/email; WebAuthn/passkeys; malware scanning; DICOM viewing/processing and STL/PLY formats; reminders/communications; background job runner; server-generated PDFs and e-mailing of invoices/statements; patient-level data export; imaging/clinical/billing history migration.
 
 ## Awaiting client confirmation
 
@@ -48,7 +49,7 @@ VistaSoft (Q07) and 3Shape TRIOS (Q08). Only interface definitions exist (`apps/
 - Clinical/billing UIs are functional but plain (no templates, printing, or bulk operations).
 - Billing: single currency (ZAR); no tax computation; credit after payment can leave a negative outstanding (patient credit) by design; no refunds workflow.
 - Appointments have practitioners but no separate chair/resource model; no recurring appointments; no reminders.
-- Web CSP allows `'unsafe-inline'` (Next.js hydration); tighten with nonces once hosting is fixed.
+- Web CSP allows `'unsafe-inline'` scripts (Next.js static pages); a nonce-based policy needs dynamic rendering and is deferred until hosting is fixed. Other directives are strict (`object-src 'none'`, `frame-ancestors 'none'`, upgrade-insecure-requests in production). Set HSTS at the TLS terminator once the domain is final.
 - Argon2 parameters are the OWASP baseline, not tuned to production hardware.
 - The S3 adapter is tested against an S3-compatible test server, not yet against the chosen production provider.
 - Not POPIA-certified; no claim of compliance is made.

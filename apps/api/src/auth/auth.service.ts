@@ -47,7 +47,7 @@ export class AuthService {
   async login(input: LoginRequest, ctx: RequestContext): Promise<LoginResult> {
     const user = await this.prisma.user.findUnique({
       where: { email: input.email },
-      include: { roleAssignments: true, mfa: true },
+      include: { roleAssignments: true, mfa: true, organisation: { select: { name: true } } },
     });
     const base = { requestId: ctx.requestId, ipAddress: ctx.ip };
 
@@ -132,7 +132,7 @@ export class AuthService {
     const userId = await this.mfa.verifyChallenge(input, { requestId: ctx.requestId, ip: ctx.ip });
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      include: { roleAssignments: true, mfa: true },
+      include: { roleAssignments: true, mfa: true, organisation: { select: { name: true } } },
     });
     await this.prisma.user.update({
       where: { id: user.id },
@@ -142,7 +142,9 @@ export class AuthService {
   }
 
   private async completeLogin(
-    user: Prisma.UserGetPayload<{ include: { roleAssignments: true; mfa: true } }>,
+    user: Prisma.UserGetPayload<{
+      include: { roleAssignments: true; mfa: true; organisation: { select: { name: true } } };
+    }>,
     ctx: RequestContext,
   ): Promise<Extract<LoginResult, { kind: 'session' }>> {
     const { token, expiresAt } = await this.sessions.create(user.id, ctx.userAgent);
@@ -174,6 +176,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         organisationId: user.organisationId,
+        organisationName: user.organisation.name,
         mustChangePassword: user.mustChangePassword,
         ...mfaFlags(this.env, assignments, !!user.mfa?.confirmedAt),
         assignments,

@@ -7,6 +7,8 @@ test('web pages carry hardening headers', async ({ request }) => {
   expect(h['x-frame-options']).toBe('DENY');
   expect(h['referrer-policy']).toBe('no-referrer');
   expect(h['content-security-policy']).toContain("frame-ancestors 'none'");
+  expect(h['content-security-policy']).toContain("object-src 'none'");
+  expect(h['cross-origin-resource-policy']).toBe('same-origin');
   expect(h['x-powered-by']).toBeUndefined();
 });
 

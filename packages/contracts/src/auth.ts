@@ -21,6 +21,7 @@ export const currentUserSchema = z.object({
   email: z.string().email(),
   displayName: z.string(),
   organisationId: uuidSchema,
+  organisationName: z.string(),
   /** When true the API only permits changing the password, viewing the profile and signing out. */
   mustChangePassword: z.boolean(),
   /** Whether this account has a confirmed second factor. */

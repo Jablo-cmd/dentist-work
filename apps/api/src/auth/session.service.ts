@@ -39,7 +39,11 @@ export class SessionService {
   async resolve(token: string): Promise<Principal | null> {
     const session = await this.prisma.session.findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { user: { include: { roleAssignments: true, mfa: true } } },
+      include: {
+        user: {
+          include: { roleAssignments: true, mfa: true, organisation: { select: { name: true } } },
+        },
+      },
     });
     if (!session || session.revokedAt) return null;
     const now = Date.now();
@@ -68,6 +72,7 @@ export class SessionService {
       email: user.email,
       displayName: user.displayName,
       organisationId: user.organisationId,
+      organisationName: user.organisation.name,
       mustChangePassword: user.mustChangePassword,
       ...mfaFlags(this.env, assignments, !!user.mfa?.confirmedAt),
       assignments,

@@ -78,6 +78,10 @@ export default function BillingPage() {
         <Link href={`/patients/${id}`} className="text-sm text-primary underline">
           ← Patient details
         </Link>
+        {' · '}
+        <Link href={`/patients/${id}/statement`} className="text-sm text-primary underline">
+          Print account statement
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Billing and account</h1>
         <p className="text-sm text-muted-foreground">
           Posted invoices and payments are permanent. Corrections are made with credit notes and
@@ -248,6 +252,12 @@ function InvoiceRow({
         ))}
       </ul>
       {inv.reason && <p className="text-xs">Reason: {inv.reason}</p>}
+      <Link
+        href={`/patients/${inv.patientId}/billing/invoice/${inv.id}`}
+        className="text-xs text-primary underline"
+      >
+        View / print {inv.kind === 'CREDIT_NOTE' ? 'credit note' : 'invoice'}
+      </Link>
       {manage && inv.status === 'DRAFT' && (
         <div className="flex gap-2">
           <Button
