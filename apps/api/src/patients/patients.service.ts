@@ -23,6 +23,7 @@ import {
 import { hasPermission } from '../access/permissions';
 import type { Principal } from '../auth/auth.types';
 import { AuditService } from '../audit/audit.service';
+import { escapeLike } from '../common/like';
 import type { Ctx } from '../common/request-context';
 import { PrismaService } from '../prisma/prisma.service';
 import { PatientAccessService } from './patient-access.service';
@@ -116,7 +117,7 @@ export class PatientsService {
       email?: string | null;
     },
   ): Promise<DuplicateCandidate[]> {
-    const lastName = { equals: subject.lastName, mode: 'insensitive' as const };
+    const lastName = { equals: escapeLike(subject.lastName), mode: 'insensitive' as const };
     const or: Prisma.PatientWhereInput[] = [{ dateOfBirth: toDate(subject.dateOfBirth), lastName }];
     if (subject.idNumber) or.push({ idNumber: subject.idNumber });
     if (subject.mobilePhone) or.push({ mobilePhone: subject.mobilePhone, lastName });
@@ -224,7 +225,7 @@ export class PatientsService {
         and.push({ OR: [{ mobilePhone: phone }, { homePhone: phone }, { idNumber: q.q }] });
       } else {
         for (const token of q.q.split(/\s+/).filter(Boolean)) {
-          const sw = { startsWith: token, mode: 'insensitive' as const };
+          const sw = { startsWith: escapeLike(token), mode: 'insensitive' as const };
           and.push({
             OR: [{ firstName: sw }, { lastName: sw }, { preferredName: sw }, { idNumber: token }],
           });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { patientDetailsShape } from '@dpms/contracts';
 import type { PrismaClient } from '@prisma/client';
+import { escapeLike } from '../common/like';
 import { parseCsv } from './csv';
 
 const rowSchema = z
@@ -120,7 +121,7 @@ export async function runPatientImport(
     const or: object[] = [
       {
         dateOfBirth: new Date(`${d.dateOfBirth}T00:00:00Z`),
-        lastName: { equals: d.lastName, mode: 'insensitive' },
+        lastName: { equals: escapeLike(d.lastName), mode: 'insensitive' },
       },
     ];
     if (d.idNumber) or.push({ idNumber: d.idNumber });

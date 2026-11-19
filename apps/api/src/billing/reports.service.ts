@@ -102,7 +102,7 @@ export class ReportsService {
       outcome: 'SUCCESS',
       actorUserId: p.id,
       organisationId: p.organisationId,
-      practiceId: q.practiceId ?? null,
+      practiceId: q.practiceId && ids.includes(q.practiceId) ? q.practiceId : null,
       requestId: ctx.requestId,
       ipAddress: ctx.ip,
     });
@@ -143,7 +143,7 @@ export class ReportsService {
       outcome: 'SUCCESS',
       actorUserId: p.id,
       organisationId: p.organisationId,
-      practiceId: q.practiceId ?? null,
+      practiceId: q.practiceId && ids.includes(q.practiceId) ? q.practiceId : null,
       requestId: ctx.requestId,
       ipAddress: ctx.ip,
     });

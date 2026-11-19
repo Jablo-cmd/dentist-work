@@ -7,6 +7,7 @@ import {
   type AuditEventsQuery,
   type Paginated,
 } from '@dpms/contracts';
+import { escapeLike } from '../common/like';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CurrentPrincipal, RequirePermission } from '../auth/decorators';
 import type { Principal } from '../auth/auth.types';
@@ -26,7 +27,7 @@ export class AuditController {
     // Tenant boundary: only this organisation's events (events without an org are never listed).
     const where: Prisma.AuditEventWhereInput = {
       organisationId: p.organisationId,
-      ...(q.action ? { action: { startsWith: q.action } } : {}),
+      ...(q.action ? { action: { startsWith: escapeLike(q.action) } } : {}),
       ...(q.outcome ? { outcome: q.outcome } : {}),
       ...(q.actorUserId ? { actorUserId: q.actorUserId } : {}),
       ...(q.from || q.to

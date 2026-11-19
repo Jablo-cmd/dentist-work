@@ -165,7 +165,13 @@ export class AppointmentsService {
   }
 
   async practitioners(p: Principal, practiceId: string): Promise<Practitioner[]> {
-    if (!hasPermission(p.assignments, 'appointment.read', { practiceId }))
+    // An organisation-wide grant matches ANY practice id, so the id must be proven to belong to the
+    // caller's organisation before it is used (otherwise a foreign id would be answered, not refused).
+    const practice = await this.prisma.practice.findFirst({
+      where: { id: practiceId, organisationId: p.organisationId },
+      select: { id: true },
+    });
+    if (!practice || !hasPermission(p.assignments, 'appointment.read', { practiceId }))
       throw new NotFoundException();
     const users = await this.prisma.user.findMany({
       where: {
