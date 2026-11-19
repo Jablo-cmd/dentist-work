@@ -68,6 +68,8 @@ model User {
   /// Argon2id PHC string. Never returned by any API.
   passwordHash   String
   isActive       Boolean   @default(true)
+  mustChangePassword Boolean @default(false)
+  passwordChangedAt DateTime? @db.Timestamptz(6)
   failedLoginCount Int     @default(0)
   lockedUntil    DateTime? @db.Timestamptz(6)
   lastLoginAt    DateTime? @db.Timestamptz(6)

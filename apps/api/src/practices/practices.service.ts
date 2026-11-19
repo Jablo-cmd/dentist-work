@@ -1,6 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { CreatePracticeRequest, Paginated, PaginationQuery, Practice } from '@dpms/contracts';
+import type {
+  UpdatePracticeRequest,
+  CreatePracticeRequest,
+  Paginated,
+  PaginationQuery,
+  Practice,
+} from '@dpms/contracts';
 import { practiceScope } from '../access/permissions';
 import type { Principal } from '../auth/auth.types';
 import { AuditService } from '../audit/audit.service';
@@ -69,6 +75,47 @@ export class PracticesService {
       throw new NotFoundException();
     }
     return toDto(row);
+  }
+
+  async update(
+    p: Principal,
+    id: string,
+    input: UpdatePracticeRequest,
+    requestId: string,
+    ip?: string,
+  ): Promise<Practice> {
+    const existing = await this.prisma.practice.findFirst({
+      where: { id, organisationId: p.organisationId },
+    });
+    if (!existing) throw new NotFoundException();
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const row = await tx.practice.update({
+          where: { id },
+          data: { name: input.name, isActive: input.isActive },
+        });
+        await this.audit.record(
+          {
+            action: 'practice.update',
+            outcome: 'SUCCESS',
+            actorUserId: p.id,
+            organisationId: p.organisationId,
+            practiceId: id,
+            targetType: 'practice',
+            targetId: id,
+            requestId,
+            ipAddress: ip,
+            metadata: { activeChanged: input.isActive !== undefined },
+          },
+          tx,
+        );
+        return toDto(row);
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+        throw new ConflictException('A practice with that name already exists.');
+      throw err;
+    }
   }
 
   async create(

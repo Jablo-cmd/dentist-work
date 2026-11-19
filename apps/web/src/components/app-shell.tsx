@@ -1,18 +1,31 @@
 'use client';
 
-import { LayoutDashboard, LogOut, Menu, Building2, X } from 'lucide-react';
+import {
+  Building2,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { can } from '@/lib/permissions';
 import { useSession } from '@/lib/session';
+import type { Permission } from '@dpms/contracts';
 import { cn } from '@/lib/utils';
 
-const NAV = [
+const NAV: { href: string; label: string; icon: LucideIcon; permission?: Permission }[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
-  { href: '/practices', label: 'Practices', icon: Building2 },
-] as const;
+  { href: '/practices', label: 'Practices', icon: Building2, permission: 'practice.read' },
+  { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
+  { href: '/change-password', label: 'Password', icon: KeyRound },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, logout } = useSession();
@@ -22,7 +35,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (state.status === 'anonymous') router.replace('/login');
-  }, [state.status, router]);
+    if (
+      state.status === 'authenticated' &&
+      state.user.mustChangePassword &&
+      pathname !== '/change-password'
+    )
+      router.replace('/change-password');
+  }, [state, router, pathname]);
   useEffect(() => setOpen(false), [pathname]);
 
   if (state.status !== 'authenticated') {
@@ -38,22 +57,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const nav = (
     <nav aria-label="Primary" className="flex flex-col gap-1">
-      {NAV.map(({ href, label, icon: Icon }) => {
-        const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-white/10 hover:text-white',
-              active && 'bg-white/10 text-white',
-            )}
-          >
-            <Icon className="h-4 w-4" aria-hidden /> {label}
-          </Link>
-        );
-      })}
+      {NAV.filter((n) => !n.permission || can(user, n.permission)).map(
+        ({ href, label, icon: Icon }) => {
+          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 hover:bg-white/10 hover:text-white',
+                active && 'bg-white/10 text-white',
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden /> {label}
+            </Link>
+          );
+        },
+      )}
     </nav>
   );
 

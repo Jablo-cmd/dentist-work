@@ -25,7 +25,11 @@ const BASE = '/api/v1';
 export async function apiFetch<T>(
   path: string,
   schema: ZodType<T> | null,
-  init: { method?: 'GET' | 'POST'; body?: unknown; signal?: AbortSignal } = {},
+  init: {
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
+    body?: unknown;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<T> {
   let res: Response;
   try {

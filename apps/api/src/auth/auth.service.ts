@@ -1,11 +1,12 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import type { CurrentUser, LoginRequest } from '@dpms/contracts';
+import type { ChangePasswordRequest, CurrentUser, LoginRequest } from '@dpms/contracts';
 import { CodedHttpException } from '../common/http-exception.filter';
 import { ENV, type Env } from '../config/env';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { permissionsFor } from '../access/permissions';
-import { PasswordService } from './password.service';
+import type { Principal } from './auth.types';
+import { assertAcceptablePassword, PasswordService } from './password.service';
 import { SessionService } from './session.service';
 
 export interface RequestContext {
@@ -126,6 +127,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         organisationId: user.organisationId,
+        mustChangePassword: user.mustChangePassword,
         assignments,
         permissions: permissionsFor(assignments),
       },
@@ -140,6 +142,54 @@ export class AuthService {
       actorUserId: principalId,
       requestId: ctx.requestId,
       ipAddress: ctx.ip,
+    });
+  }
+
+  /** Changes the caller's own password. Revokes every other session; keeps the current one. */
+  async changePassword(
+    p: Principal,
+    input: ChangePasswordRequest,
+    ctx: RequestContext,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: p.id } });
+    const base = {
+      requestId: ctx.requestId,
+      ipAddress: ctx.ip,
+      actorUserId: p.id,
+      organisationId: p.organisationId,
+      action: 'auth.password_change',
+    };
+    if (!(await this.passwords.verify(user.passwordHash, input.currentPassword))) {
+      await this.audit.recordBestEffort({
+        ...base,
+        outcome: 'FAILURE',
+        metadata: { reason: 'bad_current_password' },
+      });
+      throw new CodedHttpException(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_FAILED',
+        'Current password is incorrect.',
+      );
+    }
+    assertAcceptablePassword(input.newPassword, user.email);
+    if (input.newPassword === input.currentPassword) {
+      throw new CodedHttpException(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_FAILED',
+        'New password must differ from the current password.',
+      );
+    }
+    const passwordHash = await this.passwords.hash(input.newPassword);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: p.id },
+        data: { passwordHash, mustChangePassword: false, passwordChangedAt: new Date() },
+      });
+      await tx.session.updateMany({
+        where: { userId: p.id, revokedAt: null, id: { not: p.sessionId } },
+        data: { revokedAt: new Date(), revokedReason: 'password_changed' },
+      });
+      await this.audit.record({ ...base, outcome: 'SUCCESS' }, tx);
     });
   }
 }

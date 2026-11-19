@@ -1,4 +1,4 @@
-import type { Permission, RoleAssignment, RoleKey } from '@dpms/contracts';
+import { PERMISSIONS, type Permission, type RoleAssignment, type RoleKey } from '@dpms/contracts';
 
 /**
  * Role → permission policy. Deny by default: a permission not listed here is not granted.
@@ -6,11 +6,54 @@ import type { Permission, RoleAssignment, RoleKey } from '@dpms/contracts';
  * Final role definitions are an open client decision (Q04) — see docs/15.
  */
 export const ROLE_PERMISSIONS: Readonly<Record<RoleKey, readonly Permission[]>> = {
-  ORGANISATION_OWNER: ['practice.read', 'practice.manage', 'audit.read'],
-  PRACTICE_ADMINISTRATOR: ['practice.read'],
-  DENTIST: ['practice.read'],
-  RECEPTIONIST: ['practice.read'],
-  BILLING_ADMINISTRATOR: ['practice.read'],
+  // Owner: everything. Clinical/financial rights are included because the owner is accountable
+  // for the organisation; narrow if the client decides otherwise (Q04).
+  ORGANISATION_OWNER: [...PERMISSIONS],
+  PRACTICE_ADMINISTRATOR: [
+    'practice.read',
+    'user.read',
+    'user.manage',
+    'patient.create',
+    'patient.read',
+    'patient.update',
+    'appointment.read',
+    'appointment.manage',
+    'billing.read',
+    'financial_report.read',
+  ],
+  DENTIST: [
+    'practice.read',
+    'patient.create',
+    'patient.read',
+    'patient.update',
+    'medical_history.read',
+    'medical_history.update',
+    'appointment.read',
+    'appointment.manage',
+    'clinical_record.read',
+    'clinical_record.create',
+    'clinical_record.finalise',
+    'clinical_record.amend',
+    'imaging.upload',
+    'imaging.view',
+  ],
+  // Reception: minimum necessary — no medical history, clinical notes, imaging or billing.
+  RECEPTIONIST: [
+    'practice.read',
+    'patient.create',
+    'patient.read',
+    'patient.update',
+    'appointment.read',
+    'appointment.manage',
+  ],
+  BILLING_ADMINISTRATOR: [
+    'practice.read',
+    'patient.read',
+    'billing.read',
+    'billing.manage',
+    'payment.record',
+    'financial_report.read',
+  ],
 };
 
 export function permissionsFor(assignments: readonly RoleAssignment[]): Permission[] {

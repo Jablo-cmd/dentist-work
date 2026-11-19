@@ -95,7 +95,7 @@ describe('API (integration, real PostgreSQL)', () => {
       expect(cookie).toMatch(/dpms_session=/);
       expect(cookie).toMatch(/HttpOnly/i);
       expect(cookie).toMatch(/SameSite=Lax/i);
-      expect(JSON.stringify(res.body)).not.toMatch(/password|hash|token/i);
+      expect(JSON.stringify(res.body)).not.toMatch(/passwordHash|"hash"|token/i);
       const me = await agent.get('/api/v1/auth/me').expect(200);
       expect(me.body.user.email).toBe(fx.users.owner.email);
       expect(me.body.user.permissions).toContain('practice.manage');

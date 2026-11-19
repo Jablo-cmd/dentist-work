@@ -21,7 +21,7 @@ const ROLE_LABEL: Record<string, string> = {
 /** Delivery status mirrors docs/08. Nothing here is patient or business data. */
 const MODULES: { name: string; status: 'Available' | 'Planned' | 'Awaiting vendor' }[] = [
   { name: 'Sign-in, roles and practice access', status: 'Available' },
-  { name: 'Practices', status: 'Available' },
+  { name: 'Practices and staff management', status: 'Available' },
   { name: 'Patient administration', status: 'Planned' },
   { name: 'Appointments', status: 'Planned' },
   { name: 'Clinical records and charting', status: 'Planned' },

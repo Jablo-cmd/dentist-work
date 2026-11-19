@@ -25,6 +25,8 @@ interface SessionApi {
   state: SessionState;
   login: (input: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
+  /** Re-reads the current user from the API (e.g. after a password change). */
+  refresh: () => Promise<void>;
 }
 const Ctx = createContext<SessionApi | null>(null);
 const meSchema = z.object({ user: currentUserSchema });
@@ -67,7 +69,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [router]);
 
-  const value = useMemo(() => ({ state, login, logout }), [state, login, logout]);
+  const refresh = useCallback(async () => {
+    const { user } = await apiFetch('/auth/me', meSchema);
+    setState({ status: 'authenticated', user });
+  }, []);
+
+  const value = useMemo(() => ({ state, login, logout, refresh }), [state, login, logout, refresh]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

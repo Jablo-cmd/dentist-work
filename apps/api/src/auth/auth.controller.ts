@@ -2,6 +2,8 @@ import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common'
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import {
+  changePasswordRequestSchema,
+  type ChangePasswordRequest,
   loginRequestSchema,
   type LoginRequest,
   type LoginResponse,
@@ -13,7 +15,12 @@ import { Inject } from '@nestjs/common';
 import { ENV, type Env } from '../config/env';
 import { AuthService } from './auth.service';
 import type { AppRequest, Principal } from './auth.types';
-import { AuthenticatedOnly, CurrentPrincipal, Public } from './decorators';
+import {
+  AllowPasswordChangePending,
+  AuthenticatedOnly,
+  CurrentPrincipal,
+  Public,
+} from './decorators';
 import { SessionService } from './session.service';
 
 @ApiTags('auth')
@@ -51,6 +58,7 @@ export class AuthController {
   }
 
   @AuthenticatedOnly()
+  @AllowPasswordChangePending()
   @Post('logout')
   @HttpCode(204)
   @ApiOperation({ summary: 'Revoke the current session' })
@@ -69,10 +77,25 @@ export class AuthController {
   }
 
   @AuthenticatedOnly()
+  @AllowPasswordChangePending()
   @Get('me')
   @ApiOperation({ summary: 'Current user, assignments and effective permissions' })
   me(@CurrentPrincipal() p: Principal): { user: CurrentUser } {
     const { sessionId: _s, ...user } = p;
     return { user };
+  }
+
+  @AuthenticatedOnly()
+  @AllowPasswordChangePending()
+  @Post('change-password')
+  @HttpCode(204)
+  @ApiBody({ schema: toOpenApi(changePasswordRequestSchema) })
+  @ApiOperation({ summary: 'Change own password; other sessions are revoked' })
+  async changePassword(
+    @Body(new ZodValidationPipe(changePasswordRequestSchema)) body: ChangePasswordRequest,
+    @CurrentPrincipal() p: Principal,
+    @Req() req: AppRequest,
+  ): Promise<void> {
+    await this.auth.changePassword(p, body, { requestId: req.id, ip: req.ip });
   }
 }

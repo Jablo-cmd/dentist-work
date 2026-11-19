@@ -10,6 +10,7 @@ import { ConfigModule } from './config/config.module';
 import { ENV, type Env } from './config/env';
 import { HealthModule } from './health/health.module';
 import { PracticesModule } from './practices/practices.module';
+import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -61,6 +62,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuditModule,
     AuthModule,
     PracticesModule,
+    UsersModule,
     HealthModule,
   ],
   providers: [

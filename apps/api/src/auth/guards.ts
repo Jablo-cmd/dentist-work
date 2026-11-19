@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service';
 import { hasPermission } from '../access/permissions';
 import type { AppRequest } from './auth.types';
 import {
+  ALLOW_PASSWORD_CHANGE_PENDING,
   AUTHENTICATED_ONLY,
   IS_PUBLIC,
   REQUIRED_PERMISSION,
@@ -91,6 +92,16 @@ export class PermissionsGuard implements CanActivate {
     const targets = [context.getHandler(), context.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets)) return true;
     const req = context.switchToHttp().getRequest<AppRequest>();
+    if (
+      req.principal?.mustChangePassword &&
+      !this.reflector.getAllAndOverride<boolean>(ALLOW_PASSWORD_CHANGE_PENDING, targets)
+    ) {
+      throw new CodedHttpException(
+        HttpStatus.FORBIDDEN,
+        'PASSWORD_CHANGE_REQUIRED',
+        'Password change required.',
+      );
+    }
     const required = this.reflector.getAllAndOverride<PermissionRequirement | undefined>(
       REQUIRED_PERMISSION,
       targets,

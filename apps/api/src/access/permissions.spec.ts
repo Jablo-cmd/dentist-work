@@ -43,3 +43,38 @@ describe('permission policy', () => {
     expect(practiceScope(recepA, 'audit.read')).toEqual({ orgWide: false, practiceIds: [] });
   });
 });
+
+describe('role boundaries (least privilege)', () => {
+  const lacks = (role: keyof typeof ROLE_PERMISSIONS, ...perms: string[]) =>
+    perms.forEach((p) => expect(ROLE_PERMISSIONS[role]).not.toContain(p));
+
+  it('reception has no medical, clinical, imaging or billing access', () => {
+    lacks(
+      'RECEPTIONIST',
+      'medical_history.read',
+      'clinical_record.read',
+      'imaging.view',
+      'billing.read',
+      'user.manage',
+    );
+  });
+  it('billing has no clinical or imaging access', () => {
+    lacks(
+      'BILLING_ADMINISTRATOR',
+      'clinical_record.read',
+      'medical_history.read',
+      'imaging.view',
+      'patient.update',
+    );
+  });
+  it('only dentists finalise or amend clinical records (besides the owner)', () => {
+    for (const [role, perms] of Object.entries(ROLE_PERMISSIONS)) {
+      if (role === 'DENTIST' || role === 'ORGANISATION_OWNER') continue;
+      expect(perms).not.toContain('clinical_record.finalise');
+      expect(perms).not.toContain('clinical_record.amend');
+    }
+  });
+  it('practice administrators cannot access clinical content', () => {
+    lacks('PRACTICE_ADMINISTRATOR', 'clinical_record.read', 'medical_history.read', 'imaging.view');
+  });
+});

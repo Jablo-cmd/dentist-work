@@ -21,6 +21,8 @@ export const currentUserSchema = z.object({
   email: z.string().email(),
   displayName: z.string(),
   organisationId: uuidSchema,
+  /** When true the API only permits changing the password, viewing the profile and signing out. */
+  mustChangePassword: z.boolean(),
   assignments: z.array(roleAssignmentSchema),
   /** Convenience for UI rendering only. The API re-checks every request; never rely on this for security. */
   permissions: z.array(permissionSchema),
@@ -29,3 +31,12 @@ export type CurrentUser = z.infer<typeof currentUserSchema>;
 
 export const loginResponseSchema = z.object({ user: currentUserSchema });
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+export const MIN_PASSWORD_LENGTH = 12;
+export const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(256);
+
+export const changePasswordRequestSchema = z.object({
+  currentPassword: z.string().min(1).max(256),
+  newPassword: passwordSchema,
+});
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>;

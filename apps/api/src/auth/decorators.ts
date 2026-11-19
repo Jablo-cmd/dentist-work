@@ -5,6 +5,10 @@ import type { AppRequest, Principal } from './auth.types';
 export const IS_PUBLIC = 'dpms:public';
 export const AUTHENTICATED_ONLY = 'dpms:authenticated';
 export const REQUIRED_PERMISSION = 'dpms:permission';
+export const ALLOW_PASSWORD_CHANGE_PENDING = 'dpms:allow-pending-password';
+
+/** Route stays usable while the account has a pending forced password change. */
+export const AllowPasswordChangePending = () => SetMetadata(ALLOW_PASSWORD_CHANGE_PENDING, true);
 
 /** Route needs no session (login, health). Use sparingly; every use is a deliberate exposure. */
 export const Public = () => SetMetadata(IS_PUBLIC, true);

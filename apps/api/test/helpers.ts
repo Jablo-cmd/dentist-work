@@ -42,7 +42,10 @@ export interface Fixtures {
   orgId: string;
   practiceA: string;
   practiceB: string;
-  users: Record<'owner' | 'recepA' | 'recepB' | 'inactive', { id: string; email: string }>;
+  users: Record<
+    'owner' | 'adminA' | 'recepA' | 'recepB' | 'inactive',
+    { id: string; email: string }
+  >;
 }
 
 export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
@@ -61,7 +64,7 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
   const passwordHash = await hashPassword(TEST_PASSWORD);
   const mk = (
     email: string,
-    role: 'ORGANISATION_OWNER' | 'RECEPTIONIST',
+    role: 'ORGANISATION_OWNER' | 'PRACTICE_ADMINISTRATOR' | 'RECEPTIONIST',
     practiceId: string | null,
     isActive = true,
   ) =>
@@ -76,8 +79,9 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
       },
       select: { id: true, email: true },
     });
-  const [owner, recepA, recepB, inactive] = await Promise.all([
+  const [owner, adminA, recepA, recepB, inactive] = await Promise.all([
     mk('owner@test.invalid', 'ORGANISATION_OWNER', null),
+    mk('admin-a@test.invalid', 'PRACTICE_ADMINISTRATOR', a.id),
     mk('recep-a@test.invalid', 'RECEPTIONIST', a.id),
     mk('recep-b@test.invalid', 'RECEPTIONIST', b.id),
     mk('inactive@test.invalid', 'RECEPTIONIST', a.id, false),
@@ -86,7 +90,7 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
     orgId: org.id,
     practiceA: a.id,
     practiceB: b.id,
-    users: { owner, recepA, recepB, inactive },
+    users: { owner, adminA, recepA, recepB, inactive },
   };
 }
 

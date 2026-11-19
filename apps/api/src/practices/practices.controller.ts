@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -13,7 +14,9 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import {
   createPracticeRequestSchema,
   paginationQuerySchema,
+  updatePracticeRequestSchema,
   type CreatePracticeRequest,
+  type UpdatePracticeRequest,
   type Paginated,
   type PaginationQuery,
   type Practice,
@@ -46,6 +49,18 @@ export class PracticesController {
     @Req() req: AppRequest,
   ): Promise<Practice> {
     return this.practices.get(p, id, req.id, req.ip);
+  }
+
+  @Patch(':id')
+  @RequirePermission('practice.manage', { orgWide: true })
+  @ApiBody({ schema: toOpenApi(updatePracticeRequestSchema) })
+  update(
+    @CurrentPrincipal() p: Principal,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new ZodValidationPipe(updatePracticeRequestSchema)) body: UpdatePracticeRequest,
+    @Req() req: AppRequest,
+  ): Promise<Practice> {
+    return this.practices.update(p, id, body, req.id, req.ip);
   }
 
   @Post()

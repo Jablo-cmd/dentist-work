@@ -67,6 +67,7 @@ export class SessionService {
       email: user.email,
       displayName: user.displayName,
       organisationId: user.organisationId,
+      mustChangePassword: user.mustChangePassword,
       assignments,
       permissions: permissionsFor(assignments),
       sessionId: session.id,

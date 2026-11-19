@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { CodedHttpException } from '../common/http-exception.filter';
 import * as argon2 from 'argon2';
 
 /** OWASP-recommended Argon2id parameters (m=19 MiB, t=2, p=1) — revisit against deployed hardware. */
@@ -14,6 +15,25 @@ export const MAX_PASSWORD_LENGTH = 256;
 
 export async function hashPassword(plain: string): Promise<string> {
   return argon2.hash(plain, ARGON2_OPTIONS);
+}
+
+/** Rejects passwords that embed the account identifier. Length rules are enforced by the contract. */
+export function assertAcceptablePassword(password: string, email: string): void {
+  const local = email.split('@')[0]!.toLowerCase();
+  if (local.length >= 4 && password.toLowerCase().includes(local)) {
+    throw new CodedHttpException(
+      HttpStatus.BAD_REQUEST,
+      'VALIDATION_FAILED',
+      'Password must not contain your email name.',
+    );
+  }
+  if (new Set(password).size < 4) {
+    throw new CodedHttpException(
+      HttpStatus.BAD_REQUEST,
+      'VALIDATION_FAILED',
+      'Password is too repetitive.',
+    );
+  }
 }
 
 @Injectable()
