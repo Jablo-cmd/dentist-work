@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm --filter @dpms/contracts build && pnpm -r --workspace-concurrency=1 test",
-    "test:e2e": "pnpm --filter @dpms/e2e test",
+    "test:e2e": "pnpm --filter @dpms/e2e e2e",
     "test:integration": "pnpm --filter @dpms/contracts build && pnpm --filter @dpms/api test:integration",
     "db:migrate": "pnpm --filter @dpms/api db:migrate",
     "db:migrate:dev": "pnpm --filter @dpms/api db:migrate:dev",
