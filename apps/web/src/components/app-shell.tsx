@@ -2,10 +2,12 @@
 
 import {
   Building2,
+  CopyCheck,
   KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
+  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -23,6 +25,13 @@ import { cn } from '@/lib/utils';
 const NAV: { href: string; label: string; icon: LucideIcon; permission?: Permission }[] = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/practices', label: 'Practices', icon: Building2, permission: 'practice.read' },
+  { href: '/patients', label: 'Patients', icon: UserRound, permission: 'patient.read' },
+  {
+    href: '/patients/duplicates',
+    label: 'Duplicate review',
+    icon: CopyCheck,
+    permission: 'patient.update',
+  },
   { href: '/users', label: 'Staff', icon: Users, permission: 'user.read' },
   { href: '/change-password', label: 'Password', icon: KeyRound },
 ];
@@ -59,7 +68,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <nav aria-label="Primary" className="flex flex-col gap-1">
       {NAV.filter((n) => !n.permission || can(user, n.permission)).map(
         ({ href, label, icon: Icon }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const active =
+            href === '/' || href === '/patients'
+              ? pathname === href ||
+                (href === '/patients' &&
+                  pathname.startsWith('/patients/') &&
+                  !pathname.startsWith('/patients/duplicates'))
+              : pathname.startsWith(href);
           return (
             <Link
               key={href}

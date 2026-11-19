@@ -9,6 +9,7 @@ import { genReqId } from './common/request-id';
 import { ConfigModule } from './config/config.module';
 import { ENV, type Env } from './config/env';
 import { HealthModule } from './health/health.module';
+import { PatientsModule } from './patients/patients.module';
 import { PracticesModule } from './practices/practices.module';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -62,6 +63,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuditModule,
     AuthModule,
     PracticesModule,
+    PatientsModule,
     UsersModule,
     HealthModule,
   ],

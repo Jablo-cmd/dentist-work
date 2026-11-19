@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type RoleKey } from '@prisma/client';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
@@ -43,14 +43,14 @@ export interface Fixtures {
   practiceA: string;
   practiceB: string;
   users: Record<
-    'owner' | 'adminA' | 'recepA' | 'recepB' | 'inactive',
+    'owner' | 'adminA' | 'dentistA' | 'billingA' | 'recepA' | 'recepB' | 'inactive',
     { id: string; email: string }
   >;
 }
 
 export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE audit_events, sessions, user_role_assignments, users, practices, organisations CASCADE',
+    'TRUNCATE TABLE audit_events, sessions, user_role_assignments, users, practices, organisations, patients, patient_practices CASCADE',
   );
   const org = await prisma.organisation.create({ data: { name: 'Synthetic Test Organisation' } });
   const [a, b] = await Promise.all([
@@ -62,12 +62,7 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
     }),
   ]);
   const passwordHash = await hashPassword(TEST_PASSWORD);
-  const mk = (
-    email: string,
-    role: 'ORGANISATION_OWNER' | 'PRACTICE_ADMINISTRATOR' | 'RECEPTIONIST',
-    practiceId: string | null,
-    isActive = true,
-  ) =>
+  const mk = (email: string, role: RoleKey, practiceId: string | null, isActive = true) =>
     prisma.user.create({
       data: {
         organisationId: org.id,
@@ -79,9 +74,11 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
       },
       select: { id: true, email: true },
     });
-  const [owner, adminA, recepA, recepB, inactive] = await Promise.all([
+  const [owner, adminA, dentistA, billingA, recepA, recepB, inactive] = await Promise.all([
     mk('owner@test.invalid', 'ORGANISATION_OWNER', null),
     mk('admin-a@test.invalid', 'PRACTICE_ADMINISTRATOR', a.id),
+    mk('dentist-a@test.invalid', 'DENTIST', a.id),
+    mk('billing-a@test.invalid', 'BILLING_ADMINISTRATOR', a.id),
     mk('recep-a@test.invalid', 'RECEPTIONIST', a.id),
     mk('recep-b@test.invalid', 'RECEPTIONIST', b.id),
     mk('inactive@test.invalid', 'RECEPTIONIST', a.id, false),
@@ -90,7 +87,7 @@ export async function resetAndSeed(prisma: PrismaClient): Promise<Fixtures> {
     orgId: org.id,
     practiceA: a.id,
     practiceB: b.id,
-    users: { owner, adminA, recepA, recepB, inactive },
+    users: { owner, adminA, dentistA, billingA, recepA, recepB, inactive },
   };
 }
 

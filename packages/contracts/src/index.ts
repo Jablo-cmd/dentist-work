@@ -5,3 +5,4 @@ export * from './auth';
 export * from './practices';
 export * from './audit';
 export * from './users';
+export * from './patients';
