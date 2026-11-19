@@ -5,6 +5,7 @@ import type { Response } from 'express';
 import type { Liveness, Readiness } from '@dpms/contracts';
 import { Public } from '../auth/decorators';
 import { PrismaService } from '../prisma/prisma.service';
+import { MALWARE_SCANNER, type MalwareScanner } from '../scanner/malware-scanner';
 import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object-storage';
 import { APP_VERSION } from '../version';
 
@@ -18,6 +19,7 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    @Inject(MALWARE_SCANNER) private readonly scanner: MalwareScanner,
   ) {}
 
   /** Liveness: process is running. Never touches dependencies. */
@@ -49,6 +51,7 @@ export class HealthController {
       up = false; // details deliberately not exposed
     }
     const storage = await this.storage.check().catch(() => 'down' as const);
+    const scanner = await this.scanner.ping().catch(() => 'down' as const);
     if (!up) res.status(HttpStatus.SERVICE_UNAVAILABLE);
     return {
       status: up ? 'ready' : 'not_ready',
@@ -56,6 +59,7 @@ export class HealthController {
       checks: {
         database: { status: up ? 'up' : 'down', latencyMs: up ? Date.now() - started : null },
         storage: { status: storage },
+        scanner: { status: scanner },
       },
     };
   }

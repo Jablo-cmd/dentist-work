@@ -81,6 +81,11 @@ const baseSchema = z.object({
    */
   MFA_REQUIRED_ROLES: z.string().optional(),
   MFA_ALLOW_UNENFORCED: bool.optional(),
+  // Malware scanner (ClamAV clamd protocol). Unset = no scanner: uploads stay quarantined (fail closed).
+  SCANNER_HOST: z.string().min(1).optional(),
+  SCANNER_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
+  SCANNER_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(15_000),
+  SCANNER_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(100).default(10),
   IMAGING_MAX_BYTES: z.coerce.number().int().min(1024).max(100_000_000).default(25_000_000),
 });
 
@@ -103,6 +108,9 @@ export type Env = {
   /** null = object storage not configured (imaging disabled). */
   storage: StorageConfig | null;
   imagingMaxBytes: number;
+  /** null = no scanner configured (uploads remain quarantined). */
+  scanner: { host: string; port: number; timeoutMs: number } | null;
+  scannerMaxAttempts: number;
   /** null = MFA unavailable (no encryption key). */
   mfaKey: Buffer | null;
   mfaIssuer: string;
@@ -220,6 +228,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     loginRateLimitPerMinute: e.LOGIN_RATE_LIMIT_PER_MINUTE,
     imagingMaxBytes: e.IMAGING_MAX_BYTES,
+    scanner: e.SCANNER_HOST
+      ? { host: e.SCANNER_HOST, port: e.SCANNER_PORT, timeoutMs: e.SCANNER_TIMEOUT_MS }
+      : null,
+    scannerMaxAttempts: e.SCANNER_MAX_ATTEMPTS,
     mfaKey: e.MFA_ENCRYPTION_KEY ? Buffer.from(e.MFA_ENCRYPTION_KEY, 'base64') : null,
     mfaIssuer: e.MFA_ISSUER,
     mfaRequiredRoles: mfaRoles,

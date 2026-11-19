@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { ClinicalModule } from './clinical/clinical.module';
 import { ImagingModule } from './imaging/imaging.module';
+import { ScannerModule } from './scanner/scanner.module';
 import { StorageModule } from './storage/storage.module';
 import { BillingModule } from './billing/billing.module';
 import { AuditModule } from './audit/audit.module';
@@ -75,6 +76,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AppointmentsModule,
     ClinicalModule,
     StorageModule,
+    ScannerModule,
     ImagingModule,
     BillingModule,
     UsersModule,

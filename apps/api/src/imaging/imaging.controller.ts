@@ -79,6 +79,17 @@ export class ImagingController {
     return this.imaging.get(p, id, ctxOf(req));
   }
 
+  @Post('imaging/:assetId/rescan')
+  @HttpCode(200)
+  @RequirePermission('imaging.upload')
+  rescan(
+    @CurrentPrincipal() p: Principal,
+    @Param('assetId', uuid()) id: string,
+    @Req() req: AppRequest,
+  ): Promise<ImagingAsset> {
+    return this.imaging.rescan(p, id, ctxOf(req));
+  }
+
   @Get('imaging/:assetId/file')
   @RequirePermission('imaging.view')
   download(

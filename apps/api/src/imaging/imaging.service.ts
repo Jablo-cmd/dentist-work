@@ -10,6 +10,7 @@ import {
   PayloadTooLargeException,
   ServiceUnavailableException,
   StreamableFile,
+  UnprocessableEntityException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -23,6 +24,12 @@ import { PatientAccessService } from '../patients/patient-access.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object-storage';
 import { sanitiseFilename, sniffMime } from './file-signature';
+import { ImagingScanService } from './imaging-scan.service';
+
+const REJECTED_MESSAGE =
+  'This file was rejected by the security scan and has not been stored. Do not retry with the same file.';
+const UNAVAILABLE_MESSAGE =
+  'This file is not available: it is awaiting a security scan or has been quarantined.';
 
 export interface UploadedFile {
   buffer: Buffer;
@@ -46,6 +53,7 @@ const toDto = (r: Row): ImagingAsset => ({
   sha256: r.sha256,
   source: r.source,
   scanStatus: r.scanStatus,
+  available: r.scanStatus === 'CLEAN',
   acquiredAt: r.acquiredAt?.toISOString() ?? null,
   uploadedByUserId: r.uploadedByUserId,
   uploadedAt: r.uploadedAt.toISOString(),
@@ -60,6 +68,7 @@ export class ImagingService {
     private readonly audit: AuditService,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
     @Inject(ENV) private readonly env: Env,
+    private readonly scan: ImagingScanService,
   ) {}
 
   async upload(
@@ -102,9 +111,14 @@ export class ImagingService {
     }
 
     const sha256 = createHash('sha256').update(file.buffer).digest('hex');
-    if (await this.prisma.imagingAsset.count({ where: { patientId, sha256 } })) {
+    const existing = await this.prisma.imagingAsset.findFirst({
+      where: { patientId, sha256 },
+      select: { scanStatus: true },
+    });
+    if (existing?.scanStatus === 'INFECTED')
+      throw new UnprocessableEntityException(REJECTED_MESSAGE);
+    if (existing)
       throw new ConflictException('This file has already been uploaded for this patient.');
-    }
 
     const objectKey = `imaging/${p.organisationId}/${randomUUID()}`;
     await this.storage.put(objectKey, file.buffer, mime);
@@ -143,8 +157,17 @@ export class ImagingService {
         );
         return r;
       });
-      return toDto(row);
+      // The file is quarantined (PENDING) from this moment. It becomes available only if the scan
+      // returns a definite clean verdict; any other outcome leaves it inaccessible.
+      const status = await this.scan.scanAndRecord(row, file.buffer, {
+        userId: p.id,
+        requestId: ctx.requestId,
+        ip: ctx.ip,
+      });
+      if (status === 'INFECTED') throw new UnprocessableEntityException(REJECTED_MESSAGE);
+      return toDto(await this.prisma.imagingAsset.findUniqueOrThrow({ where: { id: row.id } }));
     } catch (e) {
+      if (e instanceof UnprocessableEntityException) throw e;
       // Do not leave an unreferenced object behind if the metadata could not be saved.
       await this.storage
         .remove(objectKey)
@@ -216,6 +239,22 @@ export class ImagingService {
 
   async download(p: Principal, id: string, ctx: Ctx): Promise<StreamableFile> {
     const row = await this.loadVisible(p, id, ctx);
+    if (row.scanStatus !== 'CLEAN') {
+      // Fail closed: only files that passed the malware scan are ever released.
+      await this.audit.recordBestEffort({
+        action: 'imaging.download',
+        outcome: 'DENIED',
+        actorUserId: p.id,
+        organisationId: p.organisationId,
+        practiceId: row.practiceId,
+        targetType: 'imaging_asset',
+        targetId: id,
+        requestId: ctx.requestId,
+        ipAddress: ctx.ip,
+        metadata: { reason: 'not_scanned_clean', scanStatus: row.scanStatus },
+      });
+      throw new ConflictException(UNAVAILABLE_MESSAGE);
+    }
     // Fail closed: the access is recorded before any bytes are released.
     await this.audit.record({
       action: 'imaging.download',
@@ -235,5 +274,22 @@ export class ImagingService {
       length: obj.sizeBytes || row.sizeBytes,
       disposition: `${INLINE.has(row.mimeType) ? 'inline' : 'attachment'}; filename*=UTF-8''${name}`,
     });
+  }
+
+  /** Staff-triggered re-scan (e.g. after the scanner was restored). Only files still awaiting a verdict are scanned. */
+  async rescan(p: Principal, id: string, ctx: Ctx): Promise<ImagingAsset> {
+    const row = await this.prisma.imagingAsset.findFirst({
+      where: { AND: [{ id }, { patient: this.access.where(p, 'imaging.upload') }] },
+    });
+    if (!row || !hasPermission(p.assignments, 'imaging.upload', { practiceId: row.practiceId }))
+      throw new NotFoundException();
+    if (row.scanStatus === 'CLEAN' || row.scanStatus === 'INFECTED')
+      throw new ConflictException('This file already has a final scan result.');
+    if (!this.scan.scanner.configured)
+      throw new ServiceUnavailableException(
+        'Malware scanning is not configured; the file stays quarantined.',
+      );
+    await this.scan.rescanOne(row, { userId: p.id, requestId: ctx.requestId, ip: ctx.ip });
+    return toDto(await this.prisma.imagingAsset.findUniqueOrThrow({ where: { id } }));
   }
 }

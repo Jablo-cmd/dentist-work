@@ -608,8 +608,16 @@ enum ImagingModality {
   OTHER
 }
 
+/// Malware-scan lifecycle. Only CLEAN files can ever be viewed or downloaded (fail closed).
+///  PENDING     stored but not yet scanned (also: scanner not configured / unreachable)
+///  SCAN_FAILED the scanner errored or timed out on the last attempt; retried automatically
+///  CLEAN       passed; final
+///  INFECTED    malware found; final; stored bytes are deleted, the record and hash are kept
 enum ScanStatus {
-  NOT_SCANNED
+  PENDING
+  SCAN_FAILED
+  CLEAN
+  INFECTED
 }
 
 /// Immutable metadata (DB trigger). Retention/deletion rules are an open client decision (Q20),
@@ -628,7 +636,12 @@ model ImagingAsset {
   /// Opaque key (imaging/<org>/<uuid>); contains no patient information.
   objectKey        String          @unique
   source           String          @default("manual_upload")
-  scanStatus       ScanStatus      @default(NOT_SCANNED)
+  scanStatus       ScanStatus      @default(PENDING)
+  scannedAt        DateTime?       @db.Timestamptz(6)
+  /// Engine identifier and version reported by the scanner (e.g. "ClamAV 1.4.1").
+  scanEngine       String?
+  /// Failed or incomplete attempts so far; retries stop at the configured maximum.
+  scanAttempts     Int             @default(0)
   acquiredAt       DateTime?       @db.Timestamptz(6)
   uploadedByUserId String          @db.Uuid
   uploadedAt       DateTime        @default(now()) @db.Timestamptz(6)

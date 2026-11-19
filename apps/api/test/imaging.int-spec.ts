@@ -8,6 +8,7 @@ import request from 'supertest';
 // s3rver is an S3-compatible HTTP server used ONLY in tests so the real AWS-SDK adapter is exercised.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const S3rver = require('s3rver');
+import { startFakeClamd, type FakeClamd } from './support/fake-clamd';
 import {
   ORIGIN,
   TEST_DATABASE_URL,
@@ -34,6 +35,7 @@ describe('imaging (integration, real S3 adapter against an S3-compatible server)
   let s3: { run(): Promise<void>; close(): Promise<void> };
   let dir: string;
   const prisma = new PrismaClient({ datasourceUrl: TEST_DATABASE_URL });
+  let clam: FakeClamd;
   let fx: Fixtures;
   let patient: string;
   let dentistB: { id: string; email: string };
@@ -48,7 +50,10 @@ describe('imaging (integration, real S3 adapter against an S3-compatible server)
       configureBuckets: [{ name: BUCKET }],
     });
     await s3.run();
+    clam = await startFakeClamd(0);
     app = await createTestApp({
+      SCANNER_HOST: '127.0.0.1',
+      SCANNER_PORT: String(clam.port),
       STORAGE_ENDPOINT: `http://127.0.0.1:${PORT}`,
       STORAGE_REGION: 'af-south-1',
       STORAGE_BUCKET: BUCKET,
@@ -88,6 +93,7 @@ describe('imaging (integration, real S3 adapter against an S3-compatible server)
   afterAll(async () => {
     await app.close();
     await s3.close();
+    await clam.close();
     rmSync(dir, { recursive: true, force: true });
     await prisma.$disconnect();
   });
@@ -117,7 +123,8 @@ describe('imaging (integration, real S3 adapter against an S3-compatible server)
     expect(res.body).toMatchObject({
       mimeType: 'image/jpeg',
       sizeBytes: bytes.length,
-      scanStatus: 'NOT_SCANNED',
+      scanStatus: 'CLEAN',
+      available: true,
       uploadedByUserId: fx.users.dentistA.id,
       source: 'manual_upload',
     });

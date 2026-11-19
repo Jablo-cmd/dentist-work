@@ -23,6 +23,12 @@ export default defineConfig({
   },
   webServer: [
     {
+      command: 'node clamd-server.js',
+      port: E2E.scannerPort,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
       command: 'node s3-server.js',
       url: `${E2E.s3Url}/`,
       reuseExistingServer: !process.env.CI,

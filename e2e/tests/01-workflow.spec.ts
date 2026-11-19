@@ -144,6 +144,28 @@ test('a non-image upload is rejected even when named .jpg', async ({ page }) => 
   await toast(page, /Unsupported file type/);
 });
 
+test('a file flagged by the malware scan is rejected and shown as quarantined, never viewable', async ({
+  page,
+}) => {
+  await signIn(page, E2E.ownerEmail, E2E.ownerPassword);
+  await page.goto(`${patientUrl}/clinical`);
+  await page.setInputFiles('#im-file', {
+    name: 'flagged.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+      Buffer.from('FAKE-MALWARE-TEST-MARKER'),
+    ]),
+  });
+  await page.selectOption('#im-prac', { label: practice });
+  await page.getByRole('button', { name: 'Upload' }).click();
+  await toast(page, /rejected by the security scan/);
+  await page.reload();
+  await expect(page.getByText('quarantined')).toBeVisible();
+  // The only viewable file is the clean one uploaded earlier.
+  await expect(page.getByRole('link', { name: 'View', exact: true })).toHaveCount(1);
+});
+
 test('appointment: book, see conflict protection, check in', async ({ page }) => {
   await signIn(page, E2E.ownerEmail, E2E.ownerPassword);
   await page.goto('/appointments');
@@ -232,8 +254,12 @@ test('audit trail shows the activity above, without clinical content', async ({ 
   await signIn(page, E2E.ownerEmail, E2E.ownerPassword);
   await page.goto('/audit');
   await expect(page.getByRole('table', { name: 'Audit events' })).toBeVisible();
+  await page.selectOption('#a-area', 'clinical_record');
   await expect(page.getByText('clinical_record.finalise').first()).toBeVisible();
+  await page.selectOption('#a-area', 'payment');
   await expect(page.getByText('payment.record').first()).toBeVisible();
+  await page.selectOption('#a-area', 'imaging');
+  await expect(page.getByText('imaging.scan').first()).toBeVisible(); // scan verdicts are audited
   await expect(page.locator('body')).not.toContainText('SYNTHETIC clinical note');
 });
 

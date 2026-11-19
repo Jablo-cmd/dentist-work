@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { ENV, type Env } from '../config/env';
 import { ImagingController } from './imaging.controller';
+import { ImagingScanService } from './imaging-scan.service';
 import { ImagingService } from './imaging.service';
 
 @Module({
@@ -15,6 +16,6 @@ import { ImagingService } from './imaging.service';
     }),
   ],
   controllers: [ImagingController],
-  providers: [ImagingService],
+  providers: [ImagingService, ImagingScanService],
 })
 export class ImagingModule {}

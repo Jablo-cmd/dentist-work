@@ -30,7 +30,12 @@ export const uploadImagingFieldsSchema = z.object({
 });
 export type UploadImagingFields = z.infer<typeof uploadImagingFieldsSchema>;
 
-export const SCAN_STATUSES = ['NOT_SCANNED'] as const;
+/**
+ * Malware-scan lifecycle. Only CLEAN files are ever served; every other state is unavailable.
+ * PENDING = stored, not yet scanned (also when no scanner is configured); SCAN_FAILED = last attempt
+ * errored or timed out (retried automatically); INFECTED = quarantined (bytes deleted, record kept).
+ */
+export const SCAN_STATUSES = ['PENDING', 'SCAN_FAILED', 'CLEAN', 'INFECTED'] as const;
 export const imagingAssetSchema = z.object({
   id: uuidSchema,
   patientId: uuidSchema,
@@ -42,8 +47,9 @@ export const imagingAssetSchema = z.object({
   sizeBytes: z.number().int(),
   sha256: z.string().length(64),
   source: z.string(),
-  /** No malware scanner is deployed yet; every asset is honestly reported as not scanned. */
   scanStatus: z.enum(SCAN_STATUSES),
+  /** Convenience: true only when the file passed scanning and may be viewed or downloaded. */
+  available: z.boolean(),
   acquiredAt: z.string().datetime().nullable(),
   uploadedByUserId: uuidSchema,
   uploadedAt: z.string().datetime(),

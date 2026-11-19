@@ -8,6 +8,7 @@ export const E2E = {
   webUrl: 'http://localhost:3100',
   apiUrl: 'http://localhost:4100',
   s3Url: 'http://127.0.0.1:4571',
+  scannerPort: 4575,
   ownerEmail: 'owner@e2e.invalid',
   ownerPassword: 'E2e-Synthetic-Owner-Passw0rd!',
   mfaEmail: 'mfa-owner@e2e.invalid',
@@ -27,6 +28,9 @@ export const E2E = {
     STORAGE_ACCESS_KEY_ID: 'S3RVER',
     STORAGE_SECRET_ACCESS_KEY: 'S3RVER',
     STORAGE_FORCE_PATH_STYLE: 'true',
+    // Protocol-faithful fake clamd (test double; the real scanner client is exercised against it).
+    SCANNER_HOST: '127.0.0.1',
+    SCANNER_PORT: '4575',
     // Test-only key. Never reuse.
     MFA_ENCRYPTION_KEY: Buffer.alloc(32, 9).toString('base64'),
   } as Record<string, string>,

@@ -701,6 +701,15 @@ function Imaging({ patientId }: { patientId: string }) {
   const [busy, setBusy] = useState(false);
   if (state.status !== 'authenticated') return null;
 
+  async function rescan(id: string) {
+    try {
+      await apiFetch(`/imaging/${id}/rescan`, imagingAssetSchema, { method: 'POST', body: {} });
+      assets.reload();
+    } catch (err) {
+      notify('error', describeError(err));
+    }
+  }
+
   async function upload(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -726,9 +735,9 @@ function Imaging({ patientId }: { patientId: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">
-          Accepted: JPEG, PNG, PDF, DICOM (checked by file content, max 25 MB). Files are not
-          virus-scanned yet. Every view and download is audited and re-checked against your
-          permissions.
+          Accepted: JPEG, PNG, PDF, DICOM (checked by file content, max 25 MB). Every upload is held
+          in quarantine until it passes a malware scan; files that fail or cannot be scanned stay
+          unavailable. Every view and download is audited and re-checked against your permissions.
         </p>
         {assets.status === 'error' && <ErrorState error={assets.error} onRetry={assets.reload} />}
         {assets.status === 'success' && (
@@ -742,14 +751,32 @@ function Imaging({ patientId }: { patientId: string }) {
                   <span className="font-medium">{a.originalFilename}</span> · {human(a.modality)} ·{' '}
                   {(a.sizeBytes / 1024).toFixed(0)} KB · {stamp(a.uploadedAt)}
                 </span>
-                <a
-                  className="text-primary underline"
-                  href={`/api/v1/imaging/${a.id}/file`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {a.mimeType.startsWith('image/') ? 'View' : 'Download'}
-                </a>
+                {a.available ? (
+                  <a
+                    className="text-primary underline"
+                    href={`/api/v1/imaging/${a.id}/file`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {a.mimeType.startsWith('image/') ? 'View' : 'Download'}
+                  </a>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Badge tone={a.scanStatus === 'INFECTED' ? 'danger' : 'warning'}>
+                      {a.scanStatus === 'INFECTED'
+                        ? 'quarantined'
+                        : a.scanStatus === 'SCAN_FAILED'
+                          ? 'scan failed'
+                          : 'awaiting scan'}
+                    </Badge>
+                    {(a.scanStatus === 'PENDING' || a.scanStatus === 'SCAN_FAILED') &&
+                      can(state.user, 'imaging.upload') && (
+                        <Button size="sm" variant="outline" onClick={() => void rescan(a.id)}>
+                          Retry scan
+                        </Button>
+                      )}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
