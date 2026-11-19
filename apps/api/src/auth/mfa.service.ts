@@ -122,6 +122,11 @@ export class MfaService {
       await tx.mfaRecoveryCode.createMany({
         data: codes.map((c) => ({ userId: p.id, codeHash: hash(c) })),
       });
+      // Sessions opened with the password alone must not outlive the moment the account becomes MFA-protected.
+      await tx.session.updateMany({
+        where: { userId: p.id, revokedAt: null, id: { not: p.sessionId } },
+        data: { revokedAt: new Date(), revokedReason: 'mfa_enrolled' },
+      });
       await this.audit.record(
         {
           action: 'mfa.enrol_confirm',
@@ -139,6 +144,20 @@ export class MfaService {
 
   /** Disabling needs the password AND a current code, so a stolen session alone cannot remove the second factor. */
   async disable(p: Principal, input: MfaDisableRequest, ctx: Ctx): Promise<void> {
+    if (p.assignments.some((a) => this.env.mfaRequiredRoles.includes(a.role))) {
+      await this.audit.recordBestEffort({
+        action: 'mfa.disable',
+        outcome: 'DENIED',
+        actorUserId: p.id,
+        organisationId: p.organisationId,
+        requestId: ctx.requestId,
+        ipAddress: ctx.ip,
+        metadata: { reason: 'required_by_policy' },
+      });
+      throw new ConflictException(
+        'Two-factor authentication is required for your role and cannot be turned off. Ask an administrator to reset it if you have lost your device.',
+      );
+    }
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: p.id },
       include: { mfa: true },
@@ -240,7 +259,6 @@ export class MfaService {
     if (!user.isActive || locked || !user.mfa?.confirmedAt) throw invalidCode();
 
     let ok = false;
-    let viaRecovery = false;
     if (input.code) {
       const step = verifyTotp(this.decrypt(user.mfa.secretEnc), input.code);
       // Replay protection: only a step newer than the last accepted one is valid, claimed atomically.
@@ -255,12 +273,29 @@ export class MfaService {
         ok = claimed.count === 1;
       }
     } else if (input.recoveryCode) {
-      const used = await this.prisma.mfaRecoveryCode.updateMany({
-        where: { userId: user.id, codeHash: hash(input.recoveryCode), usedAt: null },
-        data: { usedAt: new Date() },
+      // Spending the code and recording that fact commit together: if the audit write fails the
+      // code is not consumed and the sign-in fails closed.
+      const code = input.recoveryCode;
+      ok = await this.prisma.$transaction(async (tx) => {
+        const used = await tx.mfaRecoveryCode.updateMany({
+          where: { userId: user.id, codeHash: hash(code), usedAt: null },
+          data: { usedAt: new Date() },
+        });
+        if (used.count !== 1) return false;
+        const remaining = await tx.mfaRecoveryCode.count({
+          where: { userId: user.id, usedAt: null },
+        });
+        await this.audit.record(
+          {
+            ...base,
+            action: 'auth.mfa_recovery_used',
+            outcome: 'SUCCESS',
+            metadata: { remaining },
+          },
+          tx,
+        );
+        return true;
       });
-      ok = used.count === 1;
-      viaRecovery = ok;
     }
 
     if (!ok) {
@@ -291,12 +326,6 @@ export class MfaService {
       data: { consumedAt: new Date() },
     });
     if (consumed.count !== 1) throw invalidCode();
-    if (viaRecovery)
-      await this.audit.recordBestEffort({
-        ...base,
-        action: 'auth.mfa_recovery_used',
-        outcome: 'SUCCESS',
-      });
     return user.id;
   }
 

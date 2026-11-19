@@ -31,7 +31,12 @@ describe('loadEnv', () => {
   });
 
   it('enforces secure settings in production', () => {
-    const prod = { ...valid, NODE_ENV: 'production' };
+    // Production now enforces MFA by default, which needs an encryption key (see the MFA policy tests below).
+    const prod = {
+      ...valid,
+      NODE_ENV: 'production',
+      MFA_ENCRYPTION_KEY: Buffer.alloc(32, 5).toString('base64'),
+    };
     expect(() =>
       loadEnv({ ...prod, COOKIE_SECURE: 'false', WEB_ORIGINS: 'https://app.example.com' }),
     ).toThrow(/COOKIE_SECURE/);
@@ -82,5 +87,57 @@ describe('MFA configuration', () => {
     expect(() => loadEnv({ ...base, MFA_REQUIRED_ROLES: 'DENTIST' })).toThrow(
       /MFA_ENCRYPTION_KEY: required/,
     );
+  });
+});
+
+describe('MFA policy defaults and fail-safe behaviour', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+    WEB_ORIGINS: 'https://app.example.com',
+  };
+  const key = Buffer.alloc(32, 3).toString('base64');
+
+  it('defaults to enforcing the recommended roles in production, and then requires the key', () => {
+    expect(() => loadEnv(prod)).toThrow(/MFA_ENCRYPTION_KEY: required/);
+    const env = loadEnv({ ...prod, MFA_ENCRYPTION_KEY: key });
+    expect(env.mfaPolicySource).toBe('production-default');
+    expect([...env.mfaRequiredRoles].sort()).toEqual(
+      ['BILLING_ADMINISTRATOR', 'DENTIST', 'ORGANISATION_OWNER', 'PRACTICE_ADMINISTRATOR'].sort(),
+    );
+    expect(env.mfaRequiredRoles).not.toContain('RECEPTIONIST'); // phase-in is a client decision
+  });
+
+  it('refuses to switch enforcement off in production without an explicit acknowledgement', () => {
+    expect(() => loadEnv({ ...prod, MFA_REQUIRED_ROLES: 'NONE' })).toThrow(/MFA_ALLOW_UNENFORCED/);
+    const env = loadEnv({ ...prod, MFA_REQUIRED_ROLES: 'NONE', MFA_ALLOW_UNENFORCED: 'true' });
+    expect(env.mfaPolicySource).toBe('explicitly-disabled');
+    expect(env.mfaRequiredRoles).toEqual([]);
+  });
+
+  it('rejects production policies that leave out the owner or are empty lists', () => {
+    expect(() =>
+      loadEnv({ ...prod, MFA_ENCRYPTION_KEY: key, MFA_REQUIRED_ROLES: 'DENTIST' }),
+    ).toThrow(/ORGANISATION_OWNER/);
+    expect(() => loadEnv({ ...prod, MFA_ENCRYPTION_KEY: key, MFA_REQUIRED_ROLES: ',' })).toThrow(
+      /MFA_REQUIRED_ROLES/,
+    );
+    expect(
+      loadEnv({
+        ...prod,
+        MFA_ENCRYPTION_KEY: key,
+        MFA_REQUIRED_ROLES: 'ORGANISATION_OWNER, DENTIST',
+      }).mfaPolicySource,
+    ).toBe('explicit');
+  });
+
+  it('keeps development permissive so local work and tests are unaffected', () => {
+    const dev = {
+      NODE_ENV: 'development',
+      DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
+      WEB_ORIGINS: 'http://localhost:3000',
+    };
+    expect(loadEnv(dev).mfaRequiredRoles).toEqual([]);
+    expect(loadEnv(dev).mfaPolicySource).toBe('development-default');
   });
 });

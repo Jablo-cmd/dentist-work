@@ -1,6 +1,18 @@
 import { ROLE_KEYS } from '@dpms/contracts';
 import { z } from 'zod';
 
+/**
+ * Recommended default MFA policy (client confirmation required — docs/25): every role that can read
+ * clinical or financial information, plus administrators. Receptionists (demographics and
+ * scheduling only) are a phase-in decision, not forced by default.
+ */
+export const RECOMMENDED_MFA_ROLES = [
+  'ORGANISATION_OWNER',
+  'PRACTICE_ADMINISTRATOR',
+  'DENTIST',
+  'BILLING_ADMINISTRATOR',
+] as const;
+
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 
 const baseSchema = z.object({
@@ -62,17 +74,13 @@ const baseSchema = z.object({
       'must be 32 bytes, base64-encoded',
     ),
   MFA_ISSUER: z.string().min(1).max(60).default('Noordwyk DPMS'),
-  /** Comma-separated role keys that MUST enrol a second factor. Empty = optional for everyone (policy pending). */
-  MFA_REQUIRED_ROLES: z
-    .string()
-    .default('')
-    .transform((v) =>
-      v
-        .split(',')
-        .map((x) => x.trim())
-        .filter(Boolean),
-    )
-    .pipe(z.array(z.enum(ROLE_KEYS))),
+  /**
+   * Comma-separated role keys that MUST enrol a second factor, or `NONE`.
+   * Unset: development/test = nobody; **production = RECOMMENDED_MFA_ROLES** (secure default).
+   * `NONE` in production additionally requires MFA_ALLOW_UNENFORCED=true (an explicit, logged client decision).
+   */
+  MFA_REQUIRED_ROLES: z.string().optional(),
+  MFA_ALLOW_UNENFORCED: bool.optional(),
   IMAGING_MAX_BYTES: z.coerce.number().int().min(1024).max(100_000_000).default(25_000_000),
 });
 
@@ -99,6 +107,9 @@ export type Env = {
   mfaKey: Buffer | null;
   mfaIssuer: string;
   mfaRequiredRoles: readonly (typeof ROLE_KEYS)[number][];
+  /** Where the effective policy came from (for the startup log). */
+  mfaPolicySource:
+    'explicit' | 'production-default' | 'development-default' | 'explicitly-disabled';
 };
 
 export interface StorageConfig {
@@ -153,8 +164,41 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     );
   if (isProduction && e.STORAGE_ENDPOINT && !e.STORAGE_ENDPOINT.startsWith('https://'))
     problems.push('STORAGE_ENDPOINT: must be https:// in production');
-  if (e.MFA_REQUIRED_ROLES.length > 0 && !e.MFA_ENCRYPTION_KEY)
-    problems.push('MFA_ENCRYPTION_KEY: required when MFA_REQUIRED_ROLES is set');
+  // ---- MFA policy: fail safe -------------------------------------------------------------
+  const rawPolicy = (e.MFA_REQUIRED_ROLES ?? '').trim();
+  let mfaRoles: (typeof ROLE_KEYS)[number][] = [];
+  let mfaPolicySource: Env['mfaPolicySource'];
+  if (rawPolicy === '') {
+    mfaRoles = isProduction ? [...RECOMMENDED_MFA_ROLES] : [];
+    mfaPolicySource = isProduction ? 'production-default' : 'development-default';
+  } else if (rawPolicy.toUpperCase() === 'NONE') {
+    mfaPolicySource = 'explicitly-disabled';
+    if (isProduction && e.MFA_ALLOW_UNENFORCED !== true)
+      problems.push(
+        'MFA_REQUIRED_ROLES=NONE: refused in production unless MFA_ALLOW_UNENFORCED=true (explicit client decision)',
+      );
+  } else {
+    const parsedRoles = z.array(z.enum(ROLE_KEYS)).safeParse(
+      rawPolicy
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean),
+    );
+    if (!parsedRoles.success)
+      problems.push(
+        'MFA_REQUIRED_ROLES: must be a comma-separated list of valid role keys, or NONE',
+      );
+    else mfaRoles = parsedRoles.data;
+    mfaPolicySource = 'explicit';
+    if (isProduction && mfaRoles.length === 0)
+      problems.push('MFA_REQUIRED_ROLES: must not be empty in production');
+    if (isProduction && !mfaRoles.includes('ORGANISATION_OWNER'))
+      problems.push('MFA_REQUIRED_ROLES: must include ORGANISATION_OWNER in production');
+  }
+  if (mfaRoles.length > 0 && !e.MFA_ENCRYPTION_KEY)
+    problems.push(
+      'MFA_ENCRYPTION_KEY: required when MFA is enforced (always the case in production unless explicitly disabled)',
+    );
   if (e.SESSION_IDLE_TIMEOUT_MINUTES > e.SESSION_TTL_MINUTES)
     problems.push('SESSION_IDLE_TIMEOUT_MINUTES: must not exceed SESSION_TTL_MINUTES');
   if (problems.length) throw new EnvValidationError(problems);
@@ -178,7 +222,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     imagingMaxBytes: e.IMAGING_MAX_BYTES,
     mfaKey: e.MFA_ENCRYPTION_KEY ? Buffer.from(e.MFA_ENCRYPTION_KEY, 'base64') : null,
     mfaIssuer: e.MFA_ISSUER,
-    mfaRequiredRoles: e.MFA_REQUIRED_ROLES,
+    mfaRequiredRoles: mfaRoles,
+    mfaPolicySource,
     storage:
       storageSet === storageVars.length
         ? {
