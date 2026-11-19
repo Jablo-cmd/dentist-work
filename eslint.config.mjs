@@ -10,6 +10,8 @@ export default tseslint.config(
       '**/.next/**',
       '**/node_modules/**',
       '**/coverage/**',
+      'e2e/test-results/**',
+      'e2e/playwright-report/**',
       'apps/web/next-env.d.ts',
     ],
   },

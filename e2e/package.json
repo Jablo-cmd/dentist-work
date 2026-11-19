@@ -1,0 +1,20 @@
+{
+  "name": "@dpms/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser end-to-end and accessibility tests (Playwright) against the full stack with synthetic data.",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@dpms/contracts": "workspace:*",
+    "@playwright/test": "1.63.0",
+    "@prisma/client": "^6.19.0",
+    "@types/node": "^22.10.0",
+    "argon2": "^0.44.0",
+    "s3rver": "^3.7.1",
+    "typescript": "~5.9.3"
+  }
+}

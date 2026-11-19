@@ -9,3 +9,5 @@ README.md
 docs/README.md
 docs/0[1-8]-*.md
 docs/decisions/ADR-0001-*.md
+e2e/test-results
+e2e/playwright-report

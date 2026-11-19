@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const apiInternal = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
-
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -29,11 +27,8 @@ const nextConfig = {
   poweredByHeader: false,
   // Linting runs for the whole monorepo via the root `pnpm lint` (CI gate); not duplicated in `next build`.
   eslint: { ignoreDuringBuilds: true },
-  // The browser talks to the API same-origin through this proxy, so session cookies are
-  // first-party and no cross-site cookie/CORS exposure is needed.
-  async rewrites() {
-    return [{ source: '/api/:path*', destination: `${apiInternal}/api/:path*` }];
-  },
+  // The browser talks to the API same-origin through the proxy route handler at src/app/api/[...path]
+  // (reads API_INTERNAL_URL at runtime), so session cookies are first-party and no CORS is needed.
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

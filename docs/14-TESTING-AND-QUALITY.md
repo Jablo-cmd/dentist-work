@@ -18,4 +18,10 @@ Defects found by these tests and fixed during development are recorded in the co
 
 CI (`.github/workflows/ci.yml`): lint → format → typecheck → unit → migrate from scratch → drift check → integration → build → dependency audit.
 
-A manual browser walkthrough (Playwright) covering sign-in, staff, patient registration, medical history, clinical notes/amendment, chart, treatment plan, imaging upload, appointment booking/check-in, invoicing, payment/reversal, reports, forced password change and role-based navigation was executed against the live stack with no console errors. **That script is not committed as an automated suite**; a committed browser e2e suite in CI remains to do. Not yet covered: load/performance, backup/restore, security testing beyond the above.
+**Browser end-to-end and accessibility suite (committed, runs in CI):** `e2e/` (Playwright + axe-core) starts the real API, web app, PostgreSQL and an S3-compatible server on isolated ports/database with synthetic data. 30 tests: the full practice workflow (practice and staff set-up, registration, duplicate review, medical history, clinical note draft/finalise/amend, chart, treatment plan, imaging upload and authorised download, appointment booking and conflict protection, check-in, invoice/payment/reversal, reports, audit trail, forced password change, role-limited navigation), MFA enrolment/sign-in/recovery codes, automated WCAG 2.1 A/AA scans of every page (no serious or critical violations), a keyboard skip-link check, security headers, CSRF and unauthenticated access. Run locally with `pnpm test:e2e` (set `PW_CHROMIUM_PATH` to reuse an installed Chromium; the database `dpms_e2e` must exist and is wiped on every run).
+
+Accessibility note: automated scans catch only part of the problems. **Manual keyboard and screen-reader testing, and review by users with access needs, remain to do.**
+
+The e2e run found and fixed a real deployment defect: the web proxy used a build-time `rewrites()` destination and ignored `API_INTERNAL_URL` at runtime. It is now a runtime route handler.
+
+Not yet covered: load/performance, and restore drills in an environment other than the developer machine.

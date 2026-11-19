@@ -25,3 +25,5 @@ next-env.d.ts
 /uploads/
 *.dump
 *.sql.gz
+e2e/test-results/
+e2e/playwright-report/

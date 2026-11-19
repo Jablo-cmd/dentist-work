@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "rootDir": "..",
+    "module": "CommonJS",
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts", "../apps/api/src/auth/totp.ts"],
+  "exclude": ["node_modules"]
+}
