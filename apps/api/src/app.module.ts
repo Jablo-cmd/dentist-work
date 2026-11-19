@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { ClinicalModule } from './clinical/clinical.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard, OriginGuard, PermissionsGuard } from './auth/guards';
@@ -66,6 +67,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PracticesModule,
     PatientsModule,
     AppointmentsModule,
+    ClinicalModule,
     UsersModule,
     HealthModule,
   ],

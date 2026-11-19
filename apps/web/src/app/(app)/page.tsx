@@ -24,7 +24,7 @@ const MODULES: { name: string; status: 'Available' | 'Planned' | 'Awaiting vendo
   { name: 'Practices and staff management', status: 'Available' },
   { name: 'Patient administration, medical history and duplicate review', status: 'Available' },
   { name: 'Appointments', status: 'Available' },
-  { name: 'Clinical records and charting', status: 'Planned' },
+  { name: 'Clinical records, dental charting and treatment plans', status: 'Available' },
   { name: 'Imaging', status: 'Planned' },
   { name: 'VistaSoft / 3Shape TRIOS integration', status: 'Awaiting vendor' },
   { name: 'Billing and reporting', status: 'Planned' },

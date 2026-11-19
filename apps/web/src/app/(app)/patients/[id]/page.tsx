@@ -13,6 +13,7 @@ import {
   type Patient,
 } from '@dpms/contracts';
 import { AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { PatientFields } from '@/components/patient-form';
@@ -227,6 +228,15 @@ function PatientView({ patient, reload }: { patient: Patient; reload: () => void
           )}
         </CardContent>
       </Card>
+
+      {can(user, 'clinical_record.read') && (
+        <Link
+          href={`/patients/${patient.id}/clinical`}
+          className="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium hover:bg-muted"
+        >
+          Open clinical record (notes, dental chart, treatment plans)
+        </Link>
+      )}
 
       {patient.severeAllergyCount !== null && (
         <MedicalHistoryCard
