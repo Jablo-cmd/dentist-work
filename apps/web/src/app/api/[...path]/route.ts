@@ -42,6 +42,10 @@ async function proxy(
   req.headers.forEach((v, k) => {
     if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v);
   });
+  // When the API deployment sits behind Vercel Deployment Protection, the web tier authenticates to it
+  // with the project's automation-bypass secret (never exposed to the browser; server-side only).
+  const bypass = process.env.API_PROTECTION_BYPASS;
+  if (bypass) headers.set('x-vercel-protection-bypass', bypass);
   const hasBody = !['GET', 'HEAD'].includes(req.method);
   let upstream: Response;
   try {
