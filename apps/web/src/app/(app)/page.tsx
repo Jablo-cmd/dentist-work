@@ -93,7 +93,7 @@ export default function OverviewPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Welcome, {user.displayName}</h1>
         <p className="text-sm text-muted-foreground">
-          Foundation release. Clinical and patient modules are not yet available.
+          Pre-production build. Use synthetic data only until the production gates are met.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">

@@ -32,7 +32,7 @@ or accounting sign-off.
 - **Tax / VAT**: nothing is calculated. Any VAT rate, rounding rule, tax invoice wording or
   SARS requirement must be confirmed by the practice's accountant (decision register, D-VAT).
 - **Medical-aid / insurer claims**: not implemented.
-- **Time zone**: instants are stored in UTC; display uses the browser locale. The practice's
+- **Time zone**: instants are stored in UTC; the web UI displays all times in a fixed Africa/Johannesburg zone (`apps/web/src/lib/time.ts`). The practice's
   operating time zone and working hours are not modelled, so bookings outside opening hours are
   not rejected.
 - **Currency**: fixed to ZAR as a working assumption (Q12, unconfirmed); no multi-currency.
