@@ -36,8 +36,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               className={cn(
-                'pointer-events-auto flex items-start gap-2 rounded-md border bg-card p-3 text-sm shadow-lg',
+                'pointer-events-auto flex items-start gap-2 rounded-md border bg-card p-3 text-sm shadow-pop',
                 t.tone === 'error' && 'border-danger/40',
+                t.tone === 'success' && 'border-success/30',
               )}
             >
               <I
@@ -45,6 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   'mt-0.5 h-4 w-4 shrink-0',
                   t.tone === 'success' && 'text-success',
                   t.tone === 'error' && 'text-danger',
+                  t.tone === 'info' && 'text-info',
                 )}
                 aria-hidden
               />

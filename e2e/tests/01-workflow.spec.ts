@@ -53,6 +53,7 @@ test('reception-style patient registration, search and medical history', async (
   await expect(page.getByRole('link', { name: /Syntheticson, Playwright/ }).first()).toBeVisible();
 
   await page.goto(patientUrl);
+  await page.getByRole('tab', { name: 'Medical history and allergies' }).click();
   await page.fill('#al-sub', 'Synthetic penicillin');
   await page.selectOption('#al-sev', 'SEVERE');
   await page.getByRole('button', { name: 'Add allergy' }).click();
@@ -94,11 +95,13 @@ test('clinical note lifecycle: draft, finalise, amend; chart; plan; imaging', as
   await toast(page, /Amendment recorded/);
   await expect(page.getByText(/Version history \(3\)/)).toBeVisible();
 
+  await page.getByRole('tab', { name: 'Dental chart' }).click();
   await page.getByRole('button', { name: /^Tooth 26/ }).click();
   await page.selectOption('#ch-cond', 'CARIES');
   await page.getByRole('button', { name: 'Add finding' }).click();
   await expect(page.getByText('Tooth 26', { exact: false }).first()).toBeVisible();
 
+  await page.getByRole('tab', { name: 'Treatment plans' }).click();
   await page.selectOption('#tp-practice', { label: practice });
   await page.fill('#tp-title', 'E2E plan');
   await page.fill('#tp-desc', 'Restoration');
@@ -108,6 +111,7 @@ test('clinical note lifecycle: draft, finalise, amend; chart; plan; imaging', as
   await page.getByRole('button', { name: 'accepted' }).first().click();
   await expect(page.getByText('accepted').first()).toBeVisible();
 
+  await page.getByRole('tab', { name: 'Imaging and documents' }).click();
   await page.setInputFiles('#im-file', {
     name: 'scan.jpg',
     mimeType: 'image/jpeg',
@@ -134,6 +138,7 @@ test('clinical note lifecycle: draft, finalise, amend; chart; plan; imaging', as
 test('a non-image upload is rejected even when named .jpg', async ({ page }) => {
   await signIn(page, E2E.ownerEmail, E2E.ownerPassword);
   await page.goto(`${patientUrl}/clinical`);
+  await page.getByRole('tab', { name: 'Imaging and documents' }).click();
   await page.setInputFiles('#im-file', {
     name: 'evil.jpg',
     mimeType: 'image/jpeg',
@@ -149,6 +154,7 @@ test('a file flagged by the malware scan is rejected and shown as quarantined, n
 }) => {
   await signIn(page, E2E.ownerEmail, E2E.ownerPassword);
   await page.goto(`${patientUrl}/clinical`);
+  await page.getByRole('tab', { name: 'Imaging and documents' }).click();
   await page.setInputFiles('#im-file', {
     name: 'flagged.jpg',
     mimeType: 'image/jpeg',
@@ -161,6 +167,7 @@ test('a file flagged by the malware scan is rejected and shown as quarantined, n
   await page.getByRole('button', { name: 'Upload' }).click();
   await toast(page, /rejected by the security scan/);
   await page.reload();
+  await page.getByRole('tab', { name: 'Imaging and documents' }).click();
   await expect(page.getByText('quarantined')).toBeVisible();
   // The only viewable file is the clean one uploaded earlier.
   await expect(page.getByRole('link', { name: 'View', exact: true })).toHaveCount(1);

@@ -19,7 +19,6 @@ import {
   type EncounterSummary,
   type TreatmentPlan,
 } from '@dpms/contracts';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { z } from 'zod';
@@ -39,6 +38,7 @@ import { can } from '@/lib/permissions';
 import { useSession } from '@/lib/session';
 import { formatDay, formatTime } from '@/lib/time';
 import { useApi } from '@/lib/use-api';
+import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
 
 const UPPER = [
   '18',
@@ -92,22 +92,39 @@ export default function ClinicalPage() {
         />
       </Card>
     );
+  return <ClinicalTabs id={id} canImaging={can(state.user, 'imaging.view')} />;
+}
+
+function ClinicalTabs({ id, canImaging }: { id: string; canImaging: boolean }) {
+  const [tab, setTab] = useState('encounters');
   return (
     <div className="space-y-4">
-      <div>
-        <Link href={`/patients/${id}`} className="text-sm text-primary underline">
-          ← Patient details
-        </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Clinical record</h1>
-        <p className="text-sm text-muted-foreground">
-          Every view and change is audited. Finalised notes can only be amended or added to; nothing
-          is overwritten.
-        </p>
-      </div>
-      <Encounters patientId={id} />
-      <Chart patientId={id} />
-      <Plans patientId={id} />
-      {can(state.user, 'imaging.view') && <Imaging patientId={id} />}
+      <p className="text-sm text-muted-foreground">
+        Every view and change is audited. Finalised notes can only be amended or added to; nothing
+        is overwritten.
+      </p>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabList label="Clinical record sections">
+          <Tab value="encounters">Encounters and notes</Tab>
+          <Tab value="chart">Dental chart</Tab>
+          <Tab value="plans">Treatment plans</Tab>
+          {canImaging && <Tab value="imaging">Imaging and documents</Tab>}
+        </TabList>
+        <TabPanel value="encounters">
+          <Encounters patientId={id} />
+        </TabPanel>
+        <TabPanel value="chart">
+          <Chart patientId={id} />
+        </TabPanel>
+        <TabPanel value="plans">
+          <Plans patientId={id} />
+        </TabPanel>
+        {canImaging && (
+          <TabPanel value="imaging">
+            <Imaging patientId={id} />
+          </TabPanel>
+        )}
+      </Tabs>
     </div>
   );
 }
@@ -406,23 +423,30 @@ function Chart({ patientId }: { patientId: string }) {
       notify('error', describeError(err));
     }
   }
-  const row = (teeth: string[]) => (
-    <div className="flex flex-wrap justify-center gap-1">
-      {teeth.map((t) => {
-        const n = byTooth(t).length;
-        return (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTooth(t)}
-            aria-label={`Tooth ${t}${n ? `, ${n} active finding${n > 1 ? 's' : ''}` : ''}`}
-            aria-pressed={tooth === t}
-            className={`h-10 w-9 rounded-md border text-xs font-medium ${tooth === t ? 'border-primary bg-primary text-primary-foreground' : n ? 'border-warning bg-warning-soft text-warning' : 'bg-card hover:bg-muted'}`}
-          >
-            {t}
-          </button>
-        );
-      })}
+  const quadrant = (label: string, teeth: string[]) => (
+    <div role="group" aria-label={label} className="space-y-1">
+      <p className="text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="flex justify-center gap-1">
+        {teeth.map((t) => {
+          const n = byTooth(t).length;
+          const selected = tooth === t;
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTooth(t)}
+              aria-label={`Tooth ${t}${n ? `, ${n} active finding${n > 1 ? 's' : ''}` : ''}`}
+              aria-pressed={selected}
+              data-active={n > 0 && !selected}
+              className={`tooth ${selected ? '!border-primary !bg-primary !text-primary-foreground' : ''}`}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
   return (
@@ -431,12 +455,27 @@ function Chart({ patientId }: { patientId: string }) {
         <CardTitle>Dental chart (FDI notation)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2" role="group" aria-label="Tooth selector">
-          {row(UPPER)}
-          {row(LOWER)}
-          <p className="text-center text-xs text-muted-foreground">
-            Highlighted teeth have active findings. Notation is a working default pending client
-            confirmation.
+        <div role="group" aria-label="Tooth selector" className="space-y-3">
+          {/* FDI notation, viewed facing the patient: patient's right on the left of the page */}
+          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 sm:[&>*:nth-child(odd)]:border-r sm:[&>*:nth-child(odd)]:pr-6">
+            {quadrant('Upper right', UPPER.slice(0, 8))}
+            {quadrant('Upper left', UPPER.slice(8))}
+            {quadrant('Lower right', LOWER.slice(0, 8))}
+            {quadrant('Lower left', LOWER.slice(8))}
+          </div>
+          <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className="h-3 w-3 rounded-sm border border-warning bg-warning-soft"
+                aria-hidden
+              />
+              Active finding
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm bg-primary" aria-hidden />
+              Selected
+            </span>
+            <span>Notation is a working default pending client confirmation.</span>
           </p>
         </div>
         {canEdit && (

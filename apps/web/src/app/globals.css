@@ -2,34 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Noordwyk DPS design tokens (single source of truth). Values are HSL triplets so Tailwind can
+ * apply opacity. Documented in docs/27-DESIGN-SYSTEM.md. Official palette:
+ *   forest #174D36 · healthcare green #239B65 · mint #DDF3E6 · sage #EDF4EF · white · canvas #F7FAF8 · charcoal #26352D
+ * NOTE: white text on #239B65 is only 3.53:1 (fails WCAG AA for normal text), so button fills use the
+ * deeper --primary (#1B7F52, 5.0:1) while #239B65 (--brand) is used for indicators, icons and focus.
+ */
 @layer base {
   :root {
-    --background: 210 25% 97.5%;
-    --foreground: 215 28% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 14%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 14% 38%;
-    --border: 214 20% 88%;
-    --ring: 174 62% 32%;
-    --primary: 174 70% 24%;
+    /* Surfaces */
+    --background: 140 23% 97%; /* canvas #F7FAF8 */
+    --card: 0 0% 100%; /* clinical white */
+    --card-foreground: 148 16% 18%;
+    --foreground: 148 16% 18%; /* charcoal #26352D */
+    --muted: 137 24% 94%; /* soft sage #EDF4EF */
+    --muted-foreground: 146 8% 39%; /* #5B6B62, 5.4:1 on canvas */
+    --accent: 145 48% 91%; /* fresh mint #DDF3E6 */
+    --accent-foreground: 154 54% 20%;
+    --border: 143 18% 86%; /* green-tinted #D5E2DA */
+    --input: 143 14% 76%; /* form-control border, >3:1 on white */
+
+    /* Brand */
+    --forest: 154 54% 20%; /* #174D36 */
+    --brand: 153 63% 37%; /* healthcare green #239B65 */
+    --primary: 153 65% 30%; /* action fill #1B7F52 (white text 5.0:1) */
+    --primary-hover: 153 65% 25%;
     --primary-foreground: 0 0% 100%;
-    --sidebar: 205 40% 13%;
-    --sidebar-foreground: 210 25% 88%;
-    --success: 152 60% 26%;
-    --success-soft: 150 50% 93%;
-    --warning: 32 90% 30%;
-    --warning-soft: 40 95% 91%;
-    --danger: 0 68% 40%;
-    --danger-soft: 0 85% 95%;
+    --ring: 153 63% 37%;
+
+    /* Sidebar */
+    --sidebar: 154 54% 20%;
+    --sidebar-foreground: 140 25% 86%;
+    --sidebar-active: 156 49% 27%; /* lighter forest for the active item */
+    --sidebar-muted: 140 22% 78%; /* group labels / captions: >5:1 on forest */
+
+    /* Semantic status (kept distinct from brand green) */
+    --success: 142 66% 22%;
+    --success-soft: 142 52% 92%;
+    --warning: 28 90% 27%;
+    --warning-soft: 43 96% 90%;
+    --danger: 0 68% 38%;
+    --danger-soft: 0 86% 96%;
+    --info: 214 72% 34%;
+    --info-soft: 214 95% 94%;
+
+    --radius: 0.5rem;
   }
   * {
     @apply border-border;
+  }
+  html {
+    font-family:
+      'Inter Variable',
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
   }
   body {
     @apply bg-background text-foreground antialiased;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    background: hsl(var(--accent));
+  }
+}
+
+@layer components {
+  /* Dental chart tooth button: the clinical control, deliberately large and high-contrast. */
+  .tooth {
+    @apply flex h-9 w-9 items-center justify-center rounded-md border border-input bg-card text-xs font-medium tabular-nums text-foreground hover:border-brand hover:bg-accent sm:h-10 sm:w-10;
+  }
+  .tooth[data-active='true'] {
+    @apply border-warning bg-warning-soft font-semibold text-warning;
   }
 }

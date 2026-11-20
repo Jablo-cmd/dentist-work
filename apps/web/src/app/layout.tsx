@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ToastProvider } from '@/components/toast';
 import { SessionProvider } from '@/lib/session';
+import '@fontsource-variable/inter';
+import { BRAND } from '@/lib/brand';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: 'Noordwyk Dental', template: '%s · Noordwyk Dental' },
-  description: 'Noordwyk Dental practice management',
+  title: { default: BRAND.name, template: `%s · ${BRAND.name}` },
+  description: BRAND.description,
   robots: { index: false, follow: false },
 };
 

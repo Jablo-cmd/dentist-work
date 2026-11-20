@@ -34,7 +34,7 @@ import {
   type Patient,
   type PatientRevision,
   type PatientSearchQuery,
-  type PatientSummary,
+  type PatientSearchResult,
   type ReviewDuplicateRequest,
   type UpdatePatientRequest,
 } from '@dpms/contracts';
@@ -75,7 +75,7 @@ export class PatientsController {
     @CurrentPrincipal() p: Principal,
     @Query(new ZodValidationPipe(patientSearchQuerySchema)) q: PatientSearchQuery,
     @Req() req: AppRequest,
-  ): Promise<Paginated<PatientSummary>> {
+  ): Promise<Paginated<PatientSearchResult>> {
     return this.patients.search(p, q, ctxOf(req));
   }
 

@@ -176,12 +176,16 @@ describe('patients (integration)', () => {
       await a.get('/api/v1/patients?q=x').expect(400);
       expect((await a.get('/api/v1/patients?q=testa synth').expect(200)).body.meta.total).toBe(1);
       expect((await a.get('/api/v1/patients?q=0820000001').expect(200)).body.meta.total).toBe(1);
+      // result rows carry the normalised contact number (additive field used by the patient directory)
+      expect((await a.get('/api/v1/patients?q=testa').expect(200)).body.data[0].mobilePhone).toBe(
+        '+27820000001',
+      );
       expect(
         (await a.get('/api/v1/patients?dateOfBirth=1990-05-17').expect(200)).body.meta.total,
       ).toBe(1);
       expect((await a.get('/api/v1/patients?q=zzz').expect(200)).body.meta.total).toBe(0);
       const events = await prisma.auditEvent.findMany({ where: { action: 'patient.search' } });
-      expect(events.length).toBe(4);
+      expect(events.length).toBe(5);
       expect(JSON.stringify(events)).not.toMatch(/Synth|Testa|0820000001/);
     });
 

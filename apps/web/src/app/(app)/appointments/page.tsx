@@ -29,14 +29,9 @@ import { can } from '@/lib/permissions';
 import { useSession } from '@/lib/session';
 import { addDays, formatDay, formatTime, sastDate, sastInstant } from '@/lib/time';
 import { useApi } from '@/lib/use-api';
-
-const TONE = {
-  SCHEDULED: 'neutral',
-  CHECKED_IN: 'warning',
-  COMPLETED: 'success',
-  CANCELLED: 'danger',
-  NO_SHOW: 'danger',
-} as const;
+import { APPOINTMENT_BAR, APPOINTMENT_LABEL, APPOINTMENT_TONE } from '@/lib/status';
+import { PageHeader } from '@/components/ui/page-header';
+import { cn } from '@/lib/utils';
 
 export default function AppointmentsPage() {
   const { state } = useSession();
@@ -100,19 +95,17 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Appointments</h1>
-          <p className="text-sm text-muted-foreground">
-            Times shown in South African Standard Time.
-          </p>
-        </div>
-        {manage && (
-          <Button onClick={() => setShowForm((v) => !v)}>
-            {showForm ? 'Close' : 'Book appointment'}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Appointments"
+        description="Times shown in South African Standard Time."
+        actions={
+          manage && (
+            <Button onClick={() => setShowForm((v) => !v)}>
+              {showForm ? 'Close' : 'Book appointment'}
+            </Button>
+          )
+        }
+      />
 
       <Card>
         <div className="flex flex-wrap items-end gap-3 p-4">
@@ -177,12 +170,17 @@ export default function AppointmentsPage() {
             </Button>
           </div>
           <div role="group" aria-label="View" className="flex gap-1">
-            <Button variant={view === 'day' ? 'default' : 'outline'} onClick={() => setView('day')}>
+            <Button
+              variant={view === 'day' ? 'default' : 'outline'}
+              onClick={() => setView('day')}
+              aria-pressed={view === 'day'}
+            >
               Day
             </Button>
             <Button
               variant={view === 'week' ? 'default' : 'outline'}
               onClick={() => setView('week')}
+              aria-pressed={view === 'week'}
             >
               Week
             </Button>
@@ -221,7 +219,7 @@ export default function AppointmentsPage() {
         {appts.status === 'success' &&
           [...grouped.entries()].map(([day, list]) => (
             <section key={day} aria-label={formatDay(list[0]!.startsAt)}>
-              <h2 className="border-b bg-muted px-5 py-2 text-sm font-semibold">
+              <h2 className="sticky top-14 z-10 border-y bg-muted px-5 py-2 text-sm font-semibold first:border-t-0">
                 {formatDay(list[0]!.startsAt)}
               </h2>
               <ul className="divide-y">
@@ -248,13 +246,25 @@ function AppointmentRow({
   const [mode, setMode] = useState<null | 'reschedule' | 'cancel'>(null);
   const live = a.status === 'SCHEDULED' || a.status === 'CHECKED_IN';
   return (
-    <li className="space-y-2 px-5 py-3 text-sm">
+    <li
+      className={cn(
+        'relative space-y-2 py-3.5 pl-7 pr-5 text-sm',
+        a.status === 'CANCELLED' && 'bg-muted/40 text-muted-foreground',
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn('absolute inset-y-3 left-4 w-1 rounded-full', APPOINTMENT_BAR[a.status])}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="font-medium">
+          <p className="font-medium tabular-nums">
             {formatTime(a.startsAt)}–{formatTime(a.endsAt)} ·{' '}
             {a.patientName ? (
-              <Link className="text-primary underline" href={`/patients/${a.patientId}`}>
+              <Link
+                className="font-medium text-primary underline-offset-2 hover:underline"
+                href={`/patients/${a.patientId}`}
+              >
                 {a.patientName}
               </Link>
             ) : (
@@ -267,7 +277,7 @@ function AppointmentRow({
             {a.cancelReason ? ` · Cancelled: ${a.cancelReason}` : ''}
           </p>
         </div>
-        <Badge tone={TONE[a.status]}>{a.status.replace('_', ' ').toLowerCase()}</Badge>
+        <Badge tone={APPOINTMENT_TONE[a.status]}>{APPOINTMENT_LABEL[a.status]}</Badge>
       </div>
       {manage && live && (
         <div className="flex flex-wrap gap-2">

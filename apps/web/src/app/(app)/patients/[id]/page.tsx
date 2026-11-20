@@ -12,9 +12,6 @@ import {
   type MedicalHistory,
   type Patient,
 } from '@dpms/contracts';
-import { AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { PatientFields } from '@/components/patient-form';
 import { useToast } from '@/components/toast';
@@ -31,30 +28,15 @@ import { describeError } from '@/lib/errors';
 import { formValues } from '@/lib/form';
 import { can } from '@/lib/permissions';
 import { useSession } from '@/lib/session';
+import { usePatient } from '@/lib/patient-context';
 import { useApi } from '@/lib/use-api';
+import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function PatientPage() {
-  const { id } = useParams<{ id: string }>();
-  const { state } = useSession();
-  const patient = useApi((signal) => apiFetch(`/patients/${id}`, patientSchema, { signal }), [id]);
-  if (state.status !== 'authenticated') return null;
-  if (patient.status === 'loading')
-    return (
-      <div className="space-y-3" aria-busy="true">
-        <span className="sr-only">Loading patient</span>
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    );
-  if (patient.status === 'error')
-    return (
-      <Card>
-        <ErrorState error={patient.error} onRetry={patient.reload} />
-      </Card>
-    );
-  return <PatientView patient={patient.data} reload={patient.reload} />;
+  const { patient, reload } = usePatient();
+  return <PatientView patient={patient} reload={reload} />;
 }
 
 function PatientView({ patient, reload }: { patient: Patient; reload: () => void }) {
@@ -111,150 +93,122 @@ function PatientView({ patient, reload }: { patient: Patient; reload: () => void
       <dd className="text-sm">{value || '—'}</dd>
     </div>
   );
+  const [tab, setTab] = useState('personal');
+  const showMedical = patient.severeAllergyCount !== null;
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {patient.firstName} {patient.lastName}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Born {patient.dateOfBirth}
-            {!patient.isActive && ' · Inactive'}
-          </p>
-        </div>
-        {can(user, 'patient.update') && (
-          <Button variant="outline" onClick={() => setEditing((v) => !v)}>
-            {editing ? 'Cancel' : 'Edit details'}
-          </Button>
-        )}
-      </div>
-
-      {patient.severeAllergyCount !== null && patient.severeAllergyCount > 0 && (
-        <div
-          role="alert"
-          className="flex items-center gap-2 rounded-md border border-danger/40 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-        >
-          <AlertTriangle className="h-4 w-4" aria-hidden /> {patient.severeAllergyCount} severe
-          allerg{patient.severeAllergyCount > 1 ? 'ies' : 'y'} recorded — see medical history.
-        </div>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {editing ? (
-            <form onSubmit={save} className="space-y-4">
-              <PatientFields patient={patient} />
-              {error && (
-                <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
-                  {error}
-                </p>
-              )}
-              <Button type="submit">Save changes</Button>
-            </form>
-          ) : (
-            <dl className="grid gap-3 sm:grid-cols-3">
-              {row('Preferred name', patient.preferredName)}
-              {row('Sex', patient.sex.toLowerCase())}
-              {row('ID / passport', patient.idNumber)}
-              {row('Mobile', patient.mobilePhone)}
-              {row('Other phone', patient.homePhone)}
-              {row('Email', patient.email)}
-              {row(
-                'Address',
-                [
-                  patient.addressLine1,
-                  patient.addressLine2,
-                  patient.suburb,
-                  patient.city,
-                  patient.postalCode,
-                ]
-                  .filter(Boolean)
-                  .join(', '),
-              )}
-            </dl>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Emergency contacts</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {patient.contacts.length === 0 && (
-            <p className="text-sm text-muted-foreground">No contacts recorded.</p>
-          )}
-          <ul className="divide-y text-sm">
-            {patient.contacts.map((c) => (
-              <li key={c.id} className="flex items-center justify-between py-2">
-                <span>
-                  <span className="font-medium">{c.name}</span> · {c.relationship} · {c.phone}
-                </span>
-                {can(user, 'patient.update') && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      void apiFetch(`/patients/${patient.id}/contacts/${c.id}`, patientSchema, {
-                        method: 'DELETE',
-                      }).then(reload, (e) => notify('error', describeError(e)))
-                    }
-                  >
-                    Remove
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-          {can(user, 'patient.update') && (
-            <form onSubmit={addContact} className="flex flex-wrap items-end gap-2">
-              <Field id="c-name" label="Name">
-                <Input id="c-name" name="name" required />
-              </Field>
-              <Field id="c-rel" label="Relationship">
-                <Input id="c-rel" name="relationship" required />
-              </Field>
-              <Field id="c-phone" label="Phone">
-                <Input id="c-phone" name="phone" type="tel" required />
-              </Field>
-              <Button type="submit" size="sm">
-                Add
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabList label="Patient information">
+        <Tab value="personal">Personal details</Tab>
+        {showMedical && <Tab value="medical">Medical history and allergies</Tab>}
+      </TabList>
+      <TabPanel value="personal">
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle>Details</CardTitle>
+            {can(user, 'patient.update') && (
+              <Button variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
+                {editing ? 'Cancel' : 'Edit details'}
               </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardHeader>
+          <CardContent>
+            {editing ? (
+              <form onSubmit={save} className="space-y-4">
+                <PatientFields patient={patient} />
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+                  >
+                    {error}
+                  </p>
+                )}
+                <Button type="submit">Save changes</Button>
+              </form>
+            ) : (
+              <dl className="grid gap-3 sm:grid-cols-3">
+                {row('Preferred name', patient.preferredName)}
+                {row('Sex', patient.sex.toLowerCase())}
+                {row('ID / passport', patient.idNumber)}
+                {row('Mobile', patient.mobilePhone)}
+                {row('Other phone', patient.homePhone)}
+                {row('Email', patient.email)}
+                {row(
+                  'Address',
+                  [
+                    patient.addressLine1,
+                    patient.addressLine2,
+                    patient.suburb,
+                    patient.city,
+                    patient.postalCode,
+                  ]
+                    .filter(Boolean)
+                    .join(', '),
+                )}
+              </dl>
+            )}
+          </CardContent>
+        </Card>
 
-      {can(user, 'clinical_record.read') && (
-        <Link
-          href={`/patients/${patient.id}/clinical`}
-          className="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium hover:bg-muted"
-        >
-          Open clinical record (notes, dental chart, treatment plans)
-        </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle>Emergency contacts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {patient.contacts.length === 0 && (
+              <p className="text-sm text-muted-foreground">No contacts recorded.</p>
+            )}
+            <ul className="divide-y text-sm">
+              {patient.contacts.map((c) => (
+                <li key={c.id} className="flex items-center justify-between py-2">
+                  <span>
+                    <span className="font-medium">{c.name}</span> · {c.relationship} · {c.phone}
+                  </span>
+                  {can(user, 'patient.update') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        void apiFetch(`/patients/${patient.id}/contacts/${c.id}`, patientSchema, {
+                          method: 'DELETE',
+                        }).then(reload, (e) => notify('error', describeError(e)))
+                      }
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {can(user, 'patient.update') && (
+              <form onSubmit={addContact} className="flex flex-wrap items-end gap-2">
+                <Field id="c-name" label="Name">
+                  <Input id="c-name" name="name" required />
+                </Field>
+                <Field id="c-rel" label="Relationship">
+                  <Input id="c-rel" name="relationship" required />
+                </Field>
+                <Field id="c-phone" label="Phone">
+                  <Input id="c-phone" name="phone" type="tel" required />
+                </Field>
+                <Button type="submit" size="sm">
+                  Add
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </TabPanel>
+      {showMedical && (
+        <TabPanel value="medical">
+          <MedicalHistoryCard
+            patientId={patient.id}
+            canEdit={can(user, 'medical_history.update')}
+            onChange={reload}
+          />
+        </TabPanel>
       )}
-
-      {can(user, 'billing.read') && (
-        <Link
-          href={`/patients/${patient.id}/billing`}
-          className="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium hover:bg-muted"
-        >
-          Open billing and account
-        </Link>
-      )}
-
-      {patient.severeAllergyCount !== null && (
-        <MedicalHistoryCard
-          patientId={patient.id}
-          canEdit={can(user, 'medical_history.update')}
-          onChange={reload}
-        />
-      )}
-    </div>
+    </Tabs>
   );
 }
 

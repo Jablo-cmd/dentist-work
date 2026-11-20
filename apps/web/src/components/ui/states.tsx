@@ -1,4 +1,4 @@
-import { AlertTriangle, Inbox } from 'lucide-react';
+import { AlertTriangle, Inbox, Loader2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ApiRequestError } from '@/lib/api';
 import { Button } from './button';
@@ -14,7 +14,9 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-      <Inbox className="h-8 w-8 text-muted-foreground" aria-hidden />
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
+        <Inbox className="h-6 w-6" aria-hidden />
+      </span>
       <p className="font-medium">{title}</p>
       <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
       {action}
@@ -26,7 +28,9 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   const e = error instanceof ApiRequestError ? error : null;
   return (
     <div role="alert" className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <AlertTriangle className="h-8 w-8 text-danger" aria-hidden />
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-danger">
+        <AlertTriangle className="h-6 w-6" aria-hidden />
+      </span>
       <p className="font-medium">Something went wrong</p>
       <p className="max-w-sm text-sm text-muted-foreground">
         {e?.message ?? 'An unexpected error occurred.'}
@@ -37,6 +41,18 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
           Try again
         </Button>
       )}
+    </div>
+  );
+}
+
+export function LoadingState({ label = 'Loading' }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      className="flex items-center justify-center gap-2 px-6 py-10 text-sm text-muted-foreground"
+    >
+      <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> {label}…
     </div>
   );
 }

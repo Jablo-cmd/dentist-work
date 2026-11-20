@@ -12,18 +12,20 @@ import {
   recordPaymentRequestSchema,
   type Invoice,
 } from '@dpms/contracts';
+import { Printer } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
 import { useToast } from '@/components/toast';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState, ErrorState } from '@/components/ui/states';
+import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { apiFetch } from '@/lib/api';
 import { describeError } from '@/lib/errors';
 import { formValues } from '@/lib/form';
@@ -74,19 +76,17 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <Link href={`/patients/${id}`} className="text-sm text-primary underline">
-          ← Patient details
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Billing and account</h2>
+          <p className="text-sm text-muted-foreground">
+            Posted invoices and payments are permanent. Corrections are made with credit notes and
+            payment reversals.
+          </p>
+        </div>
+        <Link href={`/patients/${id}/statement`} className={buttonVariants({ variant: 'outline' })}>
+          <Printer className="h-4 w-4" aria-hidden /> Print account statement
         </Link>
-        {' · '}
-        <Link href={`/patients/${id}/statement`} className="text-sm text-primary underline">
-          Print account statement
-        </Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Billing and account</h1>
-        <p className="text-sm text-muted-foreground">
-          Posted invoices and payments are permanent. Corrections are made with credit notes and
-          payment reversals.
-        </p>
       </div>
       {account.status === 'loading' && <Skeleton className="h-32 w-full" />}
       {account.status === 'error' && (
@@ -96,29 +96,35 @@ export default function BillingPage() {
       )}
       {account.status === 'success' && (
         <>
-          <Card>
-            <CardContent className="grid gap-4 pt-5 sm:grid-cols-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-2xl font-semibold">{rand(account.data.balance)}</p>
-                <p className="text-xs text-muted-foreground">
+          <section aria-label="Account summary" className="grid gap-4 sm:grid-cols-3">
+            <Card className="p-5">
+              <p className="text-sm text-muted-foreground">Balance</p>
+              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
+                {rand(account.data.balance)}
+              </p>
+              <p className="mt-2">
+                <Badge tone={Number(account.data.balance) > 0 ? 'warning' : 'success'}>
                   {Number(account.data.balance) < 0
                     ? 'Patient is in credit'
                     : Number(account.data.balance) > 0
                       ? 'Patient owes'
                       : 'Settled'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Invoices outstanding</p>
-                <p className="text-lg font-medium">{rand(account.data.outstandingInvoices)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Payments on account</p>
-                <p className="text-lg font-medium">{rand(account.data.unallocatedPayments)}</p>
-              </div>
-            </CardContent>
-          </Card>
+                </Badge>
+              </p>
+            </Card>
+            <Card className="p-5">
+              <p className="text-sm text-muted-foreground">Invoices outstanding</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+                {rand(account.data.outstandingInvoices)}
+              </p>
+            </Card>
+            <Card className="p-5">
+              <p className="text-sm text-muted-foreground">Payments on account</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+                {rand(account.data.unallocatedPayments)}
+              </p>
+            </Card>
+          </section>
 
           <Card>
             <CardHeader>
@@ -151,24 +157,54 @@ export default function BillingPage() {
               {account.data.payments.length === 0 && (
                 <p className="text-sm text-muted-foreground">No payments recorded.</p>
               )}
-              <ul className="divide-y text-sm">
-                {account.data.payments.map((p) => (
-                  <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                    <span>
-                      {p.receivedOn} · {human(p.method)} · <strong>{rand(p.amount)}</strong>
-                      {p.reference ? ` · ${p.reference}` : ''} · unallocated {rand(p.unallocated)}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Badge tone={p.status === 'REVERSED' ? 'danger' : 'success'}>
-                        {human(p.status)}
-                      </Badge>
-                      {p.status === 'RECORDED' && manage && canPay && (
-                        <ReverseButton paymentId={p.id} onAct={act} />
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {account.data.payments.length > 0 && (
+                <div className="-mx-5 border-y">
+                  <Table>
+                    <THead>
+                      <TR>
+                        <TH>Date</TH>
+                        <TH>Method</TH>
+                        <TH className="hidden sm:table-cell">Reference</TH>
+                        <TH numeric>Amount</TH>
+                        <TH numeric className="hidden md:table-cell">
+                          Unallocated
+                        </TH>
+                        <TH>Status</TH>
+                        <TH>
+                          <span className="sr-only">Actions</span>
+                        </TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {account.data.payments.map((p) => (
+                        <TR key={p.id}>
+                          <TD className="whitespace-nowrap">{p.receivedOn}</TD>
+                          <TD>{human(p.method)}</TD>
+                          <TD className="hidden text-muted-foreground sm:table-cell">
+                            {p.reference ?? '—'}
+                          </TD>
+                          <TD numeric className="font-semibold">
+                            {rand(p.amount)}
+                          </TD>
+                          <TD numeric className="hidden text-muted-foreground md:table-cell">
+                            {rand(p.unallocated)}
+                          </TD>
+                          <TD>
+                            <Badge tone={p.status === 'REVERSED' ? 'danger' : 'success'}>
+                              {human(p.status)}
+                            </Badge>
+                          </TD>
+                          <TD className="text-right">
+                            {p.status === 'RECORDED' && manage && canPay && (
+                              <ReverseButton paymentId={p.id} onAct={act} />
+                            )}
+                          </TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              )}
               {canPay && practices.status === 'success' && (
                 <NewPayment
                   patientId={id}
@@ -229,8 +265,8 @@ function InvoiceRow({
   return (
     <li className="space-y-2 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span>
-          <span className="font-medium">{inv.number ?? 'Draft'}</span>{' '}
+        <span className="tabular-nums">
+          <span className="font-semibold">{inv.number ?? 'Draft'}</span>{' '}
           {isCn && <Badge>credit note</Badge>} · {inv.issueDate ?? 'not issued'} · total{' '}
           <strong>{rand(inv.total)}</strong>
           {inv.status === 'POSTED' && !isCn ? ` · outstanding ${rand(inv.outstanding)}` : ''}
@@ -252,12 +288,14 @@ function InvoiceRow({
         ))}
       </ul>
       {inv.reason && <p className="text-xs">Reason: {inv.reason}</p>}
-      <Link
-        href={`/patients/${inv.patientId}/billing/invoice/${inv.id}`}
-        className="text-xs text-primary underline"
-      >
-        View / print {inv.kind === 'CREDIT_NOTE' ? 'credit note' : 'invoice'}
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={`/patients/${inv.patientId}/billing/invoice/${inv.id}`}
+          className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+        >
+          View / print {inv.kind === 'CREDIT_NOTE' ? 'credit note' : 'invoice'}
+        </Link>
+      </div>
       {manage && inv.status === 'DRAFT' && (
         <div className="flex gap-2">
           <Button

@@ -68,11 +68,22 @@ test.describe('signed-in pages', () => {
       .click();
     await expect(page.getByRole('heading', { name: 'Axe Syntheticson' })).toBeVisible();
     await scan(page, 'patient profile');
-    await page.getByRole('link', { name: /Open clinical record/ }).click();
-    await expect(page.getByRole('heading', { name: 'Clinical record' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Medical history and allergies' }).click();
+    await scan(page, 'patient profile (medical history tab)');
+    await page
+      .getByRole('navigation', { name: 'Patient sections' })
+      .getByRole('link', { name: 'Clinical record' })
+      .click();
+    await expect(page.getByRole('tab', { name: 'Encounters and notes' })).toBeVisible();
     await scan(page, 'clinical record');
-    await page.goBack();
-    await page.getByRole('link', { name: /Open billing/ }).click();
+    for (const tab of ['Dental chart', 'Treatment plans', 'Imaging and documents']) {
+      await page.getByRole('tab', { name: tab }).click();
+      await scan(page, `clinical record (${tab})`);
+    }
+    await page
+      .getByRole('navigation', { name: 'Patient sections' })
+      .getByRole('link', { name: 'Billing' })
+      .click();
     await expect(page.getByRole('heading', { name: /Billing and account/ })).toBeVisible();
     await scan(page, 'billing');
   });

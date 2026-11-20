@@ -16,6 +16,7 @@ import {
   type Patient,
   type PatientRevision,
   type PatientSearchQuery,
+  type PatientSearchResult,
   type PatientSummary,
   type ReviewDuplicateRequest,
   type UpdatePatientRequest,
@@ -55,6 +56,11 @@ const summary = (r: WithLinks): PatientSummary => ({
   lastName: r.lastName,
   dateOfBirth: iso(r.dateOfBirth),
   practiceIds: r.practices.map((x) => x.practiceId),
+});
+
+const searchRow = (r: WithLinks): PatientSearchResult => ({
+  ...summary(r),
+  mobilePhone: r.mobilePhone,
 });
 
 @Injectable()
@@ -212,7 +218,11 @@ export class PatientsService {
     return { patient: await this.toPatient(p, patient.id), duplicateCandidates: candidates };
   }
 
-  async search(p: Principal, q: PatientSearchQuery, ctx: Ctx): Promise<Paginated<PatientSummary>> {
+  async search(
+    p: Principal,
+    q: PatientSearchQuery,
+    ctx: Ctx,
+  ): Promise<Paginated<PatientSearchResult>> {
     const and: Prisma.PatientWhereInput[] = [
       this.access.where(p, 'patient.read'),
       { isActive: true },
@@ -254,7 +264,7 @@ export class PatientsService {
       metadata: { resultCount: total, byDob: !!q.dateOfBirth },
     });
     return {
-      data: rows.map(summary),
+      data: rows.map(searchRow),
       meta: {
         page: q.page,
         pageSize: q.pageSize,

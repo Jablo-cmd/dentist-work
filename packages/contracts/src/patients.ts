@@ -120,6 +120,12 @@ export const patientSummarySchema = z.object({
 });
 export type PatientSummary = z.infer<typeof patientSummarySchema>;
 
+/** Search result row: the summary plus the primary contact number (already within the caller's patient.read scope). */
+export const patientSearchResultSchema = patientSummarySchema.extend({
+  mobilePhone: z.string().nullable(),
+});
+export type PatientSearchResult = z.infer<typeof patientSearchResultSchema>;
+
 export const patientContactSchema = z.object({
   id: uuidSchema,
   name: z.string(),
