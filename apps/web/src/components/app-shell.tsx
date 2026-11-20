@@ -28,6 +28,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BRAND, ROLE_LABEL } from '@/lib/brand';
 import { can } from '@/lib/permissions';
+import { requiredRedirect } from '@/lib/required-redirect';
 import { useSession } from '@/lib/session';
 import type { Permission } from '@dpms/contracts';
 import { cn } from '@/lib/utils';
@@ -110,18 +111,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (state.status === 'anonymous') router.replace('/login');
-    if (
-      state.status === 'authenticated' &&
-      state.user.mustChangePassword &&
-      pathname !== '/change-password'
-    )
-      router.replace('/change-password');
-    else if (
-      state.status === 'authenticated' &&
-      state.user.mfaEnrolmentRequired &&
-      pathname !== '/security'
-    )
-      router.replace('/security');
+    if (state.status === 'authenticated') {
+      const to = requiredRedirect(state.user, pathname);
+      if (to) router.replace(to);
+    }
   }, [state, router, pathname]);
   useEffect(() => setOpen(false), [pathname]);
 
