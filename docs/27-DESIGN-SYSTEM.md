@@ -117,3 +117,17 @@ buttons, inputs, badges, cards, shell and footer but were **not individually red
 - **Calendar:** day and week list views only (no hour-grid); `window.confirm/prompt` still used for post-invoice and
   reverse-payment confirmation (the Dialog component exists for a later migration).
 - Manual screen-reader testing, a visual-regression suite and non-Chromium browsers remain untested.
+
+## 9. Revision 2 (typography and finish)
+
+Feedback on the first pass: the interface read as a plain template and the type felt dated. Changes:
+
+- **Type scale** (Tailwind `fontSize` in `tailwind.config.ts`): 13 / **15 body** / 16 / 18 / 22 / 28 / 34px, with tighter
+  tracking on larger sizes; Inter **optical-size variable** font (`@fontsource-variable/inter/opsz.css`), `text-wrap: balance` headings.
+- **Surfaces:** 12px-radius cards with a layered green-tinted shadow, a faint mint glow behind the workspace,
+  translucent blurred header, subtle tonal gradient on the sidebar.
+- **Controls:** 44px inputs and selects with inset shadow, branded focus ring, custom select chevron, brand-coloured
+  checkboxes; buttons with a top highlight and press feedback (`font-semibold`, 8px+ radius).
+- **Badges** carry a leading status dot so state never relies on colour alone.
+- **Sign-in:** split layout with a purely graphic forest panel (no extra copy; the punchline stays in the footer).
+- KPI tiles: icon in the corner, label gets the full row, larger numerals.

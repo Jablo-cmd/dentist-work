@@ -11,12 +11,12 @@ export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>)
 }
 export const THead = (p: HTMLAttributes<HTMLTableSectionElement>) => (
   <thead
-    className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground"
+    className="border-b bg-muted/50 text-left text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground"
     {...p}
   />
 );
 export const TBody = (p: HTMLAttributes<HTMLTableSectionElement>) => (
-  <tbody className="divide-y" {...p} />
+  <tbody className="divide-y divide-border/70" {...p} />
 );
 export const TR = ({ className, ...p }: HTMLAttributes<HTMLTableRowElement>) => (
   <tr className={cn('hover:bg-muted/40', className)} {...p} />
@@ -29,7 +29,7 @@ export function TH({
   return (
     <th
       scope="col"
-      className={cn('px-4 py-2.5 font-medium', numeric && 'text-right', className)}
+      className={cn('px-5 py-3 font-medium', numeric && 'text-right', className)}
       {...p}
     />
   );
@@ -41,7 +41,7 @@ export function TD({
 }: TdHTMLAttributes<HTMLTableCellElement> & { numeric?: boolean }) {
   return (
     <td
-      className={cn('px-4 py-3 align-middle', numeric && 'text-right tabular-nums', className)}
+      className={cn('px-5 py-3.5 align-middle', numeric && 'text-right tabular-nums', className)}
       {...p}
     />
   );

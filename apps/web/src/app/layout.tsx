@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { ToastProvider } from '@/components/toast';
 import { SessionProvider } from '@/lib/session';
-import '@fontsource-variable/inter';
+import '@fontsource-variable/inter/opsz.css';
 import { BRAND } from '@/lib/brand';
 import './globals.css';
 

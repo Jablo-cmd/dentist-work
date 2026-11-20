@@ -172,9 +172,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                       title={collapsed ? label : undefined}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'group relative flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-offset-sidebar',
+                        'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-offset-sidebar',
                         collapsed && 'lg:justify-center lg:px-0',
-                        active && 'bg-sidebar-active text-white',
+                        active && 'bg-sidebar-active text-white shadow-inset',
                       )}
                     >
                       {active && (
@@ -207,7 +207,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
       <aside
         className={cn(
-          'print:hidden fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-y-auto bg-sidebar text-sidebar-foreground transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 lg:shrink-0 lg:transition-[width]',
+          'print:hidden fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-y-auto bg-gradient-to-b from-sidebar to-[hsl(156_58%_14%)] text-sidebar-foreground shadow-pop transition-transform lg:shadow-none lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 lg:shrink-0 lg:transition-[width]',
           // Closed drawer is removed from the tab order and accessibility tree (not just moved off-screen).
           open ? 'translate-x-0' : '-translate-x-full max-lg:invisible',
           collapsed ? 'lg:w-[4.5rem]' : 'lg:w-64',
@@ -215,13 +215,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            'flex items-center gap-3 px-4 pb-5 pt-5',
+            'flex items-center gap-3 px-4 pb-6 pt-6',
             collapsed && 'lg:justify-center lg:px-2',
           )}
         >
           <BrandMark />
           <div className={cn('min-w-0 leading-tight', collapsed && 'lg:sr-only')}>
-            <p className="text-sm font-semibold tracking-wide text-white">{BRAND.name}</p>
+            <p className="text-[15px] font-semibold tracking-[0.04em] text-white">{BRAND.name}</p>
             <p className="text-[11px] leading-snug text-sidebar-muted">{BRAND.description}</p>
           </div>
         </div>
@@ -248,7 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="print:hidden sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur sm:px-6">
+        <header className="print:hidden sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border/70 bg-card/80 px-4 backdrop-blur-md sm:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <Button
               variant="ghost"

@@ -219,7 +219,7 @@ export default function AppointmentsPage() {
         {appts.status === 'success' &&
           [...grouped.entries()].map(([day, list]) => (
             <section key={day} aria-label={formatDay(list[0]!.startsAt)}>
-              <h2 className="sticky top-14 z-10 border-y bg-muted px-5 py-2 text-sm font-semibold first:border-t-0">
+              <h2 className="sticky top-16 z-10 border-y bg-muted px-5 py-2 text-sm font-semibold first:border-t-0">
                 {formatDay(list[0]!.startsAt)}
               </h2>
               <ul className="divide-y">

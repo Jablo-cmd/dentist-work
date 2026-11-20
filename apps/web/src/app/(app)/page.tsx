@@ -133,7 +133,7 @@ export default function OverviewPage() {
           )}
           {seeAppointments && newPatients !== null && (
             <StatCard
-              label="New patients (30 days)"
+              label="New patients"
               icon={UserPlus}
               value={newPatients}
               hint="Registered in the last 30 days"
@@ -155,7 +155,7 @@ export default function OverviewPage() {
           )}
           {seeFinance && (
             <StatCard
-              label="Payments received (30 days)"
+              label="Payments received"
               icon={Banknote}
               value={kpi(
                 financial.status === 'loading',
@@ -165,7 +165,7 @@ export default function OverviewPage() {
               )}
               hint={
                 financial.status === 'success' && financial.data
-                  ? `${rand(financial.data.totals.invoiced)} invoiced`
+                  ? `Last 30 days · ${rand(financial.data.totals.invoiced)} invoiced`
                   : undefined
               }
             />

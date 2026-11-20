@@ -34,10 +34,20 @@ const config: Config = {
         danger: { DEFAULT: v('danger'), soft: v('danger-soft') },
         info: { DEFAULT: v('info'), soft: v('info-soft') },
       },
-      borderRadius: { lg: '0.625rem', md: '0.5rem', sm: '0.375rem' },
+      fontSize: {
+        xs: ['0.8125rem', { lineHeight: '1.15rem' }],
+        sm: ['0.9375rem', { lineHeight: '1.4rem' }],
+        base: ['1rem', { lineHeight: '1.5rem' }],
+        lg: ['1.125rem', { lineHeight: '1.6rem', letterSpacing: '-0.012em' }],
+        xl: ['1.375rem', { lineHeight: '1.8rem', letterSpacing: '-0.018em' }],
+        '2xl': ['1.75rem', { lineHeight: '2.2rem', letterSpacing: '-0.025em' }],
+        '3xl': ['2.125rem', { lineHeight: '2.5rem', letterSpacing: '-0.03em' }],
+      },
+      borderRadius: { lg: '0.75rem', md: '0.5rem', sm: '0.375rem', xl: '1rem' },
       boxShadow: {
-        card: '0 1px 2px 0 hsl(154 30% 20% / 0.05)',
-        pop: '0 8px 24px -6px hsl(154 30% 15% / 0.18)',
+        card: '0 1px 2px 0 hsl(154 40% 16% / 0.05), 0 6px 20px -8px hsl(154 40% 16% / 0.10)',
+        pop: '0 12px 32px -8px hsl(154 40% 12% / 0.28)',
+        inset: 'inset 0 1px 0 0 hsl(0 0% 100% / 0.16)',
       },
       fontFamily: {
         sans: [
