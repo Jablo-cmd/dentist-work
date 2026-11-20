@@ -36,7 +36,8 @@
     ],
     "overrides": {
       "postcss": "^8.5.23",
-      "deepmerge-ts": "^8.0.0"
+      "deepmerge-ts": "^8.0.0",
+      "effect": "^3.22.1"
     }
   },
   "devDependencies": {
