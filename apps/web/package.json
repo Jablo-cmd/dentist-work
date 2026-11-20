@@ -2,7 +2,7 @@
   "name": "@dpms/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Noordwyk DPMS web application (Next.js)",
+  "description": "MultiDentalPractice System web application (Next.js)",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

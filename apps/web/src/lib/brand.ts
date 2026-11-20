@@ -1,6 +1,6 @@
-/** Official Noordwyk DPS brand strings. Do not alter or add alternatives (brand directive). */
+/** Official brand strings (single source). Do not add alternative names or slogans. */
 export const BRAND = {
-  name: 'NOORDWYK DPS',
+  name: 'MultiDentalPractice System',
   description: 'Dental Practice Management System',
   punchline: 'Better care. Smarter practice.',
 } as const;

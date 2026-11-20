@@ -2,7 +2,7 @@
   "name": "@dpms/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Noordwyk DPMS REST API (NestJS modular monolith)",
+  "description": "MultiDentalPractice System REST API (NestJS modular monolith)",
   "scripts": {
     "build": "prisma generate && nest build",
     "dev": "prisma generate && nest start --watch",

@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <BrandMark />
           <div className={cn('min-w-0 leading-tight', collapsed && 'lg:sr-only')}>
-            <p className="text-[15px] font-semibold tracking-[0.04em] text-white">{BRAND.name}</p>
+            <p className="text-[15px] font-semibold leading-tight text-white">{BRAND.name}</p>
             <p className="text-[11px] leading-snug text-sidebar-muted">{BRAND.description}</p>
           </div>
         </div>

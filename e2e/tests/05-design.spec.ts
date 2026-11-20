@@ -16,7 +16,7 @@ const PAGES = [
 
 test('brand: sign-in shows the product identity and the official punchline', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'NOORDWYK DPS' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'MultiDentalPractice System' })).toBeVisible();
   await expect(page.getByText('Dental Practice Management System')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toContainText(PUNCHLINE);
 });
