@@ -34,3 +34,33 @@ Production defaults apply: MFA is required for the roles in `RECOMMENDED_MFA_ROL
 
 Cold starts; no background jobs (scan retries); no object storage or clamd; London region; Hobby plan terms;
 shared preview URL depends on the branch alias (update `WEB_ORIGINS`/`API_INTERNAL_URL` if it changes).
+
+## Live addresses (protected: Vercel Authentication, team members only)
+
+- Web: `https://noordwyk-dps-web-git-claude-dpms-gap-remediation-auris-nexus.vercel.app`
+  (use this host; `WEB_ORIGINS` on the API allows exactly this origin for the CSRF check)
+- API: `https://noordwyk-dps-api-git-claude-dpms-gap-remediation-auris-nexus.vercel.app` (reached only by the web tier)
+- Database: Supabase project `noordwyk-dps-demo` (`jxhulvieejxdvaoyuxsm`, eu-west-2)
+
+## What was verified on 2026-11-20 (and what was not)
+
+Verified: build and `prisma migrate deploy` succeed on Vercel; `/api/v1/health/ready` returns `database: up`
+through the web proxy (so web → protected API → Supabase works with the least-privilege role); security
+headers present; sign-in page renders with the brand and punchline; the database has 31 tables, no grants for
+Supabase's public API roles, and the app role cannot update/delete/truncate the audit table.
+**Not verified:** a real browser sign-in (POST), MFA enrolment, `TRUST_PROXY_HOPS=2` accuracy (check that the
+audit event's recorded IP is the client's), imaging (no storage/scanner), cold-start behaviour under load.
+
+## Bootstrap account
+
+One Organisation Owner (`owner@noordwyk-demo.invalid`) was created directly in SQL with a generated password and
+`mustChangePassword = true`; production MFA policy then forces authenticator enrolment at first sign-in.
+No other users, practices or patients exist. Rotate or delete this account before any shared use.
+
+## Operational notes
+
+- First deployment of each project was a _production_-targeted deployment; later pushes are previews. Build
+  concurrency on Hobby is 1, so web and API builds queue.
+- The API build needs `MIGRATE_DATABASE_URL` (owner, Supavisor session mode, port 5432); runtime uses
+  `DATABASE_URL` (app role, transaction mode, port 6543, `pgbouncer=true`).
+- Re-apply `ops/db-roles.sql`-equivalent grants after any migration that adds a table.
