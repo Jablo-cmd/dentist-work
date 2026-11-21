@@ -46,11 +46,11 @@ describe('base32 and provisioning', () => {
     expect(() => base32Decode('abc1')).toThrow();
   });
   it('builds an otpauth URI with the issuer and no trailing padding', () => {
-    const uri = otpauthUri('Noordwyk DPMS', 'a@b.invalid', secret);
+    const uri = otpauthUri('Nexus DPMS', 'a@b.invalid', secret);
     expect(uri).toContain(
-      'otpauth://totp/Noordwyk%20DPMS%3Aa%40b.invalid?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+      'otpauth://totp/Nexus%20DPMS%3Aa%40b.invalid?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
     );
-    expect(uri).toContain('issuer=Noordwyk%20DPMS');
+    expect(uri).toContain('issuer=Nexus%20DPMS');
   });
   it('generates unique, well-formed recovery codes', () => {
     const codes = new Set(Array.from({ length: 200 }, newRecoveryCode));

@@ -27,7 +27,7 @@ Apply migrations and create the first Organisation Owner (password is read from 
 pnpm db:migrate
 pnpm --filter @dpms/api build
 DPMS_BOOTSTRAP_PASSWORD='<choose-a-12+-char-password>' \
-  pnpm --filter @dpms/api admin:bootstrap "Noordwyk Dental" owner@example.com "Owner Name"
+  pnpm --filter @dpms/api admin:bootstrap "Nexus Dental" owner@example.com "Owner Name"
 ```
 
 The command refuses to run once any user exists.

@@ -1,9 +1,9 @@
 # 01 — Project Overview
 
 ## Purpose and context
-Noordwyk Dental is commissioning a custom Dental Practice Management System (DPMS) for four dental practices in Gauteng. The platform is intended to bring patient administration, appointments, clinical records, dental charting, treatment plans, diagnostic imaging, billing and practice administration into one secure digital environment.
+Nexus Dental is commissioning a custom Dental Practice Management System (DPMS) for four dental practices in Gauteng. The platform is intended to bring patient administration, appointments, clinical records, dental charting, treatment plans, diagnostic imaging, billing and practice administration into one secure digital environment.
 
-Known context: the client currently uses VistaSoft, 3Shape TRIOS, Microsoft 365 and paper patient files. Noordwyk is the initial/main practice for discovery and rollout planning. An estimate of approximately 20 patients per day has been discussed but is not a validated capacity baseline. User counts, imaging volumes, archive size, network conditions and record quality remain unknown.
+Known context: the client currently uses VistaSoft, 3Shape TRIOS, Microsoft 365 and paper patient files. Nexus is the initial/main practice for discovery and rollout planning. An estimate of approximately 20 patients per day has been discussed but is not a validated capacity baseline. User counts, imaging volumes, archive size, network conditions and record quality remain unknown.
 
 ## Vision
 Give authorised reception, clinical and administrative staff a dependable shared workspace, with reliable patient identity, traceable clinical records, secure imaging and controlled multi-practice access.

@@ -1,7 +1,7 @@
 # 02 — Product and Functional Requirements
 
 ## Product definition
-A browser-based operations platform for one Noordwyk Dental organisation with four practices. It supports the patient journey from registration and appointment through consultation, clinical documentation, imaging, treatment and billing.
+A browser-based operations platform for one Nexus Dental organisation with four practices. It supports the patient journey from registration and appointment through consultation, clinical documentation, imaging, treatment and billing.
 
 ## Functional requirements
 

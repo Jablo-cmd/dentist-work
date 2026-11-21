@@ -110,7 +110,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-4">
               <BrandMark className="h-11 w-11 lg:hidden" />
               <div>
-                <h1 className="text-2xl font-semibold text-forest">{BRAND.name}</h1>
+                <h1 className="text-3xl font-semibold text-forest">{BRAND.name}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">{BRAND.description}</p>
               </div>
             </div>

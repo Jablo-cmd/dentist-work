@@ -1,12 +1,12 @@
-# Noordwyk Dental DPMS
+# Nexus Dental Practice Management System
 
-Custom Dental Practice Management System commissioned by Noordwyk Dental and delivered by Auris Nexus Technologies (Pty) Ltd.
+Custom Dental Practice Management System commissioned by Nexus Dental and delivered by Auris Nexus Technologies (Pty) Ltd.
 
 This repository contains the authoritative product requirements, architecture, delivery documentation and application implementation.
 
 ## Project purpose
 
-Deliver a secure, centralised dental practice management system for Noordwyk Dental's four Gauteng practices. The system is intended to support patient administration, clinical records, dental charting, treatment planning, appointments, diagnostic imaging, billing, reporting and controlled multi-practice administration.
+Deliver a secure, centralised dental practice management system for Nexus Dental's four Gauteng practices. The system is intended to support patient administration, clinical records, dental charting, treatment planning, appointments, diagnostic imaging, billing, reporting and controlled multi-practice administration.
 
 ## Documentation
 

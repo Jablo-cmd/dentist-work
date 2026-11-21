@@ -1,4 +1,4 @@
-# Noordwyk Dental DPMS — Project Documentation
+# Nexus Dental Practice Management System — Project Documentation
 
 This directory is the working source of truth for product requirements, user workflows, architecture, security, integrations, migration, testing and delivery.
 
@@ -27,7 +27,7 @@ This directory is the working source of truth for product requirements, user wor
 **Confirmed direction** means explicitly established project direction. **Proposed** means a recommended design to validate. **To confirm** means a client/vendor/legal decision is outstanding. **Implemented** means code exists and has been verified. A documented requirement is not proof of implementation.
 
 ## Product and ownership
-A bespoke Dental Practice Management System commissioned by Noordwyk Dental for its four Gauteng practices and delivered by Auris Nexus Technologies (Pty) Ltd. This is a client-funded custom project, not an Auris SaaS/product monetisation initiative. Source-code and bespoke deliverable ownership follow the executed agreement; third-party/open-source components remain under their own licences.
+A bespoke Dental Practice Management System commissioned by Nexus Dental for its four Gauteng practices and delivered by Auris Nexus Technologies (Pty) Ltd. This is a client-funded custom project, not an Auris SaaS/product monetisation initiative. Source-code and bespoke deliverable ownership follow the executed agreement; third-party/open-source components remain under their own licences.
 
 ## Technology direction
 Next.js + TypeScript frontend; Node.js + NestJS + TypeScript API; PostgreSQL + Prisma; REST/OpenAPI; Tailwind CSS + shadcn/ui; pnpm. Large imaging/document binaries belong in private object storage; PostgreSQL stores metadata and secure references.

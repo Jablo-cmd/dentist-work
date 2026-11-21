@@ -7,7 +7,7 @@ import { BRAND } from '@/lib/brand';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: { default: BRAND.name, template: `%s · ${BRAND.name}` },
+  title: { default: BRAND.fullName, template: `%s · Nexus` },
   description: BRAND.description,
   robots: { index: false, follow: false },
 };

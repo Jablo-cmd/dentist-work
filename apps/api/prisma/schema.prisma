@@ -1,4 +1,4 @@
-// Noordwyk DPMS — database schema.
+// Nexus Dental Practice Management System — database schema.
 //
 // Responsibilities (grouped in this file, in migration order):
 //   1. Organisation / practice structure, users, role assignments, sessions, append-only audit events.

@@ -1,8 +1,8 @@
 {
-  "name": "noordwyk-dpms",
+  "name": "nexus-dpms",
   "version": "0.1.0",
   "private": true,
-  "description": "Noordwyk Dental Practice Management System (Auris Nexus Technologies)",
+  "description": "Nexus Dental Practice Management System (Auris Nexus Technologies)",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22.0.0"

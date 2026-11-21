@@ -1,6 +1,6 @@
-# 27 — MultiDentalPractice System Design System
+# 27 — Nexus Dental Practice Management System: Design System
 
-Official identity: **MultiDentalPractice System** (renamed from "NOORDWYK DPS" at the product owner's request) · descriptor _Dental Practice Management System_ · punchline **"Better care. Smarter practice."**
+Official identity: **Nexus Dental Practice Management System**: the lockup is "Nexus" over the descriptor _Dental Practice Management System_; the full name is used for the browser title, footer, authenticator label and API docs. Punchline: **"Better care. Smarter practice."**
 Strings live in one place, `apps/web/src/lib/brand.ts`. Do not add alternative slogans.
 
 Personality: modern clinical, minimal, professional. Forest-green navigation, bright white workspace.
@@ -69,7 +69,7 @@ clinical state (chart findings) intentionally use different shapes (badges vs to
 | Empty / Error / Loading states, Skeleton    | `ui/states.tsx`, `ui/skeleton.tsx`                                     |                                                                                                            |
 | AppShell, Breadcrumbs, AppFooter, BrandMark | `app-shell.tsx`, `breadcrumbs.tsx`, `app-footer.tsx`, `brand-mark.tsx` |                                                                                                            |
 
-Icons: Lucide only; no emoji. The M monogram is an original SVG (`brand-mark.tsx`).
+Icons: Lucide only; no emoji. The N monogram is an original SVG (`brand-mark.tsx`).
 
 ## 4. Layout
 
@@ -78,7 +78,7 @@ Icons: Lucide only; no emoji. The M monogram is an original SVG (`brand-mark.tsx
   desktop (preference remembered in `localStorage`), off-canvas drawer below 1024px. A closed drawer is
   `visibility:hidden`, so its links are not reachable by keyboard or screen reader.
 - **Header**: breadcrumbs (route-derived, never show IDs), signed-in user + role, sign out.
-- **Footer**: `MultiDentalPractice System · Better care. Smarter practice.` on every authenticated page and the sign-in
+- **Footer**: `Nexus Dental Practice Management System · Better care. Smarter practice.` on every authenticated page and the sign-in
   page; hidden when printing.
 - **Patient area**: persistent patient header (identity, age, mobile, practice, **severe-allergy alert**) with
   Overview · Clinical record · Billing section tabs; the record is loaded once and shared.

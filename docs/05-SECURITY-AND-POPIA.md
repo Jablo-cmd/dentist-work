@@ -1,7 +1,7 @@
 # 05 — Security and POPIA
 
 ## Purpose and limitation
-This document defines engineering safeguards and privacy workstreams. It is not legal advice and does not certify compliance. Noordwyk Dental and its advisers must confirm lawful basis, notices, retention, data-subject processes, operator agreements and cross-border arrangements. Health information is special personal information under POPIA and requires heightened care.
+This document defines engineering safeguards and privacy workstreams. It is not legal advice and does not certify compliance. Nexus Dental and its advisers must confirm lawful basis, notices, retention, data-subject processes, operator agreements and cross-border arrangements. Health information is special personal information under POPIA and requires heightened care.
 
 ## Governance
 Before production processing, document responsible-party/operator roles; processing purposes and lawful justification; patient/staff privacy notices and consent where applicable; data minimisation and accuracy; retention and secure disposal; data-subject request process; breach escalation/notification responsibilities; operator agreements and subcontractors; cross-border transfer assessment.

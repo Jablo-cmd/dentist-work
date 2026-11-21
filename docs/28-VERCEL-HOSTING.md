@@ -1,16 +1,16 @@
-# 28 — Vercel + Supabase demo hosting
+# 28 — Vercel + Supabase demo hosting (Nexus Dental Practice Management System)
 
 **Status: demo / staging with synthetic data only.** Not production. No real patient data may be loaded
 (see docs/22 and docs/25). Vercel Hobby is for non-commercial use; a client deployment needs a paid plan.
 
 ## Topology
 
-| Part            | Where                                                                                                              | Notes                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Web (Next.js)   | Vercel project `noordwyk-dps-web` (root `apps/web`)                                                                | Same-origin `/api/*` proxy to the API; sends the protection-bypass secret server-side                                                 |
-| API (NestJS)    | Vercel project `noordwyk-dps-api` (root `apps/api`) as one Vercel Function (`api/index.js` → `dist/serverless.js`) | Built with `nest build`; migrations run in the build                                                                                  |
-| Database        | Supabase project `noordwyk-dps-demo`, region `eu-west-2` (London)                                                  | No South African region is offered by the tooling used; fine for synthetic data, **not** for real data (residency, docs/25 D-HOSTING) |
-| Files / imaging | **Not configured**                                                                                                 | Uploads stay quarantined (fail closed); no scanner or storage is attached                                                             |
+| Part            | Where                                                                                                            | Notes                                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Web (Next.js)   | Vercel project `nexus-dpms-web` (root `apps/web`)                                                                | Same-origin `/api/*` proxy to the API; sends the protection-bypass secret server-side                                                 |
+| API (NestJS)    | Vercel project `nexus-dpms-api` (root `apps/api`) as one Vercel Function (`api/index.js` → `dist/serverless.js`) | Built with `nest build`; migrations run in the build                                                                                  |
+| Database        | Supabase project `noordwyk-dps-demo`, region `eu-west-2` (London)                                                | No South African region is offered by the tooling used; fine for synthetic data, **not** for real data (residency, docs/25 D-HOSTING) |
+| Files / imaging | **Not configured**                                                                                               | Uploads stay quarantined (fail closed); no scanner or storage is attached                                                             |
 
 Deployments are **preview** deployments of branch `claude/dpms-gap-remediation` (nothing is merged to `main`).
 Vercel Authentication ("all except custom domains") protects every `*.vercel.app` URL, so only signed-in team
@@ -37,9 +37,9 @@ shared preview URL depends on the branch alias (update `WEB_ORIGINS`/`API_INTERN
 
 ## Live addresses (protected: Vercel Authentication, team members only)
 
-- Web: `https://noordwyk-dps-web-git-claude-dpms-gap-remediation-auris-nexus.vercel.app`
+- Web: `https://nexus-dpms-web-git-claude-dpms-gap-remediation-auris-nexus.vercel.app`
   (use this host; `WEB_ORIGINS` on the API allows exactly this origin for the CSRF check)
-- API: `https://noordwyk-dps-api-git-claude-dpms-gap-remediation-auris-nexus.vercel.app` (reached only by the web tier)
+- API: `https://nexus-dpms-api-git-claude-dpms-gap-remediation-auris-nexus.vercel.app` (reached only by the web tier)
 - Database: Supabase project `noordwyk-dps-demo` (`jxhulvieejxdvaoyuxsm`, eu-west-2)
 
 ## What was verified on 2026-11-20 (and what was not)
@@ -53,7 +53,7 @@ audit event's recorded IP is the client's), imaging (no storage/scanner), cold-s
 
 ## Bootstrap account
 
-One Organisation Owner (`owner@noordwyk-demo.invalid`) was created directly in SQL with a generated password and
+One Organisation Owner (`owner@nexus-demo.invalid`) was created directly in SQL with a generated password and
 `mustChangePassword = true`; production MFA policy then forces authenticator enrolment at first sign-in.
 No other users, practices or patients exist. Rotate or delete this account before any shared use.
 
@@ -64,3 +64,9 @@ No other users, practices or patients exist. Rotate or delete this account befor
 - The API build needs `MIGRATE_DATABASE_URL` (owner, Supavisor session mode, port 5432); runtime uses
   `DATABASE_URL` (app role, transaction mode, port 6543, `pgbouncer=true`).
 - Re-apply `ops/db-roles.sql`-equivalent grants after any migration that adds a table.
+
+## Naming note
+
+The product was renamed to **Nexus Dental Practice Management System**. Vercel projects were renamed
+(`nexus-dpms-web`, `nexus-dpms-api`) and the web/API address settings updated to match. The Supabase project is still
+named `noordwyk-dps-demo` (its name cannot be changed with the tooling used here; rename it in the Supabase dashboard).

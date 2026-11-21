@@ -64,7 +64,7 @@ describe('multi-factor authentication (integration)', () => {
       const { agent } = await loginAgent(app, fx.users.recepA.email);
       const start = (await post(agent, '/api/v1/auth/mfa/enrol').expect(200)).body;
       expect(start.otpauthUri).toMatch(
-        /^otpauth:\/\/totp\/.+secret=[A-Z2-7]+&issuer=MultiDentalPractice%20System/,
+        /^otpauth:\/\/totp\/.+secret=[A-Z2-7]+&issuer=Nexus%20Dental%20Practice%20Management%20System/,
       );
       expect((await agent.get('/api/v1/auth/me')).body.user.mfaEnabled).toBe(false); // not enabled until confirmed
       await post(agent, '/api/v1/auth/mfa/confirm', { code: '000000' }).expect(401);

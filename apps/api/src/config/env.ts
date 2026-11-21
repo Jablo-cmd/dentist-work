@@ -78,7 +78,7 @@ const baseSchema = z.object({
       (v) => v === undefined || Buffer.from(v, 'base64').length === 32,
       'must be 32 bytes, base64-encoded',
     ),
-  MFA_ISSUER: z.string().min(1).max(60).default('MultiDentalPractice System'),
+  MFA_ISSUER: z.string().min(1).max(60).default('Nexus Dental Practice Management System'),
   /**
    * Comma-separated role keys that MUST enrol a second factor, or `NONE`.
    * Unset: development/test = nobody; **production = RECOMMENDED_MFA_ROLES** (secure default).

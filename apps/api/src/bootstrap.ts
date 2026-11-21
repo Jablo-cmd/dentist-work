@@ -11,7 +11,7 @@ import { APP_VERSION } from './version';
 
 export function buildOpenApi(app: NestExpressApplication) {
   const config = new DocumentBuilder()
-    .setTitle('MultiDentalPractice System API')
+    .setTitle('Nexus Dental Practice Management System API')
     .setDescription(
       'Foundation API. Only endpoints listed here exist; planned modules are in docs/.',
     )
