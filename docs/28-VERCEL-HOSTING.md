@@ -1,6 +1,6 @@
-# 28 — Vercel + Supabase demo hosting (Nexus Dental Practice Management System)
+# 28 — Vercel + Supabase hosting: first (London) test environment — SUPERSEDED by docs/29
 
-**Status: demo / staging with synthetic data only.** Not production. No real patient data may be loaded
+**Status: this London environment is paused and superseded by the Ireland environment in docs/29. It held synthetic data only.** Not production. No real patient data may be loaded
 (see docs/22 and docs/25). Vercel Hobby is for non-commercial use; a client deployment needs a paid plan.
 
 ## Topology
