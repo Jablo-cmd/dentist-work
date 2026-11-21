@@ -55,3 +55,19 @@ manual screen-reader test · user acceptance sign-off.
 
 One Organisation Owner exists (created by SQL with a generated password and forced change on first sign-in).
 Production MFA policy then forces authenticator enrolment. No practices or patients exist.
+
+## Domain
+
+The web app is served from **`dental.aurisnexus.co.za`** (domain `aurisnexus.co.za` is held in the Auris Nexus Vercel team;
+its DNS is hosted at `host-ww.net`, so the record below must be created there). The API keeps its Vercel address
+(reached only by the web tier). `WEB_ORIGINS` on the API allows both `https://dental.aurisnexus.co.za` and the
+Vercel branch address.
+
+DNS record to add at the DNS host:
+
+| Type  | Name     | Value                                                                         |
+| ----- | -------- | ----------------------------------------------------------------------------- |
+| CNAME | `dental` | `9da14b6e0fff7f62.vercel-dns-017.com.` (alternative: `cname.vercel-dns.com.`) |
+
+**Exposure note:** Vercel Authentication does not cover custom domains, so the sign-in page on this domain is publicly
+reachable (protected by lockout, rate limiting and mandatory MFA). The Vercel-generated addresses stay private.
