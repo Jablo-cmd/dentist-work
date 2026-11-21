@@ -28,6 +28,47 @@ test('sign-in page sends enquiries to info@aurisnexus.co.za', async ({ page }) =
   await expect(link).toHaveAttribute('href', 'mailto:info@aurisnexus.co.za');
 });
 
+test.describe('enquiry form', () => {
+  test('validates before sending, and falls back to the address when email is unavailable', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Send an enquiry' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Enquire about Nexus' });
+    await expect(dialog).toBeVisible();
+    // empty submit: friendly validation, nothing sent
+    await dialog.getByRole('button', { name: 'Send enquiry' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Please enter your name');
+    // a real-looking enquiry: this stack has no mail server configured, so the API answers 503
+    await dialog.getByLabel('Your name').fill('Synthetic Visitor');
+    await dialog.getByLabel('Email address').fill('visitor@example.invalid');
+    await dialog.getByLabel('Message').fill('We would like to see a demonstration of the system.');
+    await dialog.getByRole('button', { name: 'Send enquiry' }).click();
+    const alert = dialog.getByRole('alert');
+    await expect(alert).toContainText('could not be sent');
+    await expect(alert.getByRole('link', { name: 'info@aurisnexus.co.za' })).toHaveAttribute(
+      'href',
+      'mailto:info@aurisnexus.co.za',
+    );
+    // Escape closes the dialog
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
+
+  test('the spam-trap field is not reachable by people or assistive technology', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Send an enquiry' }).click();
+    // exposed to neither assistive technology (aria-hidden) nor sighted users (zero-size, off-screen)
+    await expect(page.getByRole('textbox', { name: 'Website' })).toHaveCount(0);
+    const trap = page.locator('input[name=website]');
+    await expect(trap).toHaveAttribute('tabindex', '-1'); // not reachable with the keyboard
+    const box = (await trap.boundingBox())!;
+    expect(box.x + box.width).toBeLessThan(0); // positioned entirely off-screen
+  });
+});
+
 test('brand: the official punchline is in the footer of every authenticated page', async ({
   page,
 }) => {

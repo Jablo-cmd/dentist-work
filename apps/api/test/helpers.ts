@@ -24,6 +24,7 @@ export function testEnv(overrides: Record<string, string | undefined> = {}) {
     LOG_LEVEL: 'silent',
     RATE_LIMIT_PER_MINUTE: '10000',
     LOGIN_RATE_LIMIT_PER_MINUTE: '10000',
+    ENQUIRY_RATE_LIMIT_PER_HOUR: '10000',
     LOGIN_MAX_FAILED_ATTEMPTS: '3',
     // Test-only key (32 bytes, base64). Never reuse outside tests.
     MFA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
@@ -33,11 +34,14 @@ export function testEnv(overrides: Record<string, string | undefined> = {}) {
 
 export async function createTestApp(
   overrides: Record<string, string | undefined> = {},
+  providers: { token: unknown; value: unknown }[] = [],
 ): Promise<NestExpressApplication> {
   Object.assign(process.env, testEnv(overrides));
   // An override of `undefined` means "unset this variable".
   for (const [k, v] of Object.entries(overrides)) if (v === undefined) delete process.env[k];
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  let builder = Test.createTestingModule({ imports: [AppModule] });
+  for (const p of providers) builder = builder.overrideProvider(p.token as never).useValue(p.value);
+  const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app, loadEnv());
   await app.init();

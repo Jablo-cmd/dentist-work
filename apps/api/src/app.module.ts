@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { EnquiriesModule } from './enquiries/enquiries.module';
 import { LoggerModule } from 'nestjs-pino';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { ClinicalModule } from './clinical/clinical.module';
@@ -47,6 +48,18 @@ import { PrismaModule } from './prisma/prisma.module';
                 )[0]!,
               ),
           },
+          {
+            name: 'enquiry',
+            ttl: 3_600_000,
+            limit: env.enquiryRateLimitPerHour,
+            // Public form that sends email: a small hourly budget per client address.
+            skipIf: (ctx) =>
+              !/\/enquiries$/.test(
+                (ctx.switchToHttp().getRequest<{ originalUrl: string }>().originalUrl ?? '').split(
+                  '?',
+                )[0]!,
+              ),
+          },
         ],
       }),
     }),
@@ -63,6 +76,7 @@ import { PrismaModule } from './prisma/prisma.module';
     BillingModule,
     UsersModule,
     HealthModule,
+    EnquiriesModule,
   ],
   providers: [
     // Order matters: rate limit -> origin (CSRF) -> authenticate -> authorise.

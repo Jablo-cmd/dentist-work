@@ -59,3 +59,18 @@ CLI-only: `DPMS_BOOTSTRAP_PASSWORD` (see docs/09). Import tool: see docs/16. Tes
 | Variable           | Default                 | Notes                                                                                                              |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `API_INTERNAL_URL` | `http://localhost:4000` | Read **at runtime** by the web server's proxy route (`src/app/api/[...path]`), so one build serves any environment |
+
+## Enquiry email (public form on the sign-in page)
+
+`POST /api/v1/enquiries` is the only public write endpoint besides sign-in. It emails the message to a **fixed** inbox over
+authenticated, TLS-protected SMTP. SMTP is optional: unset, the form reports "unavailable" and points visitors at the address.
+
+| Variable                      | Default                 | Purpose                                                                                                                         |
+| ----------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `SMTP_HOST`                   | unset                   | SMTP server. With `SMTP_USER` and `SMTP_PASSWORD` it must be set **all together** (the API refuses to boot with a partial set). |
+| `SMTP_PORT`                   | `465`                   | 465 = implicit TLS. Any other port (e.g. 587) requires STARTTLS to succeed; there is no plaintext fallback.                     |
+| `SMTP_USER` / `SMTP_PASSWORD` | unset                   | Mailbox credentials. Use an **app-specific password**; store as a sensitive variable.                                           |
+| `SMTP_SECURE`                 | `true` on 465           | Force implicit TLS on or off.                                                                                                   |
+| `ENQUIRY_TO`                  | `info@aurisnexus.co.za` | Recipient. Fixed by configuration, never taken from a request.                                                                  |
+| `ENQUIRY_FROM`                | `SMTP_USER`             | Sender address; must be one the SMTP account may send as. The visitor is only ever the Reply-To.                                |
+| `ENQUIRY_RATE_LIMIT_PER_HOUR` | `5`                     | Enquiries accepted per client address per hour (then HTTP 429).                                                                 |

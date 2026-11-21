@@ -71,3 +71,21 @@ DNS record to add at the DNS host:
 
 **Exposure note:** Vercel Authentication does not cover custom domains, so the sign-in page on this domain is publicly
 reachable (protected by lockout, rate limiting and mandatory MFA). The Vercel-generated addresses stay private.
+
+## Enquiry email (sign-in page form)
+
+The form is built and tested; **it sends nothing until SMTP credentials are added**, and until then it tells visitors to email
+`info@aurisnexus.co.za` directly. To enable: in Zoho Mail create an _app-specific password_ for the sending mailbox (My Account →
+Security → App Passwords; SMTP access must be enabled), then add to Vercel project `nexus-dpms-api` as **sensitive** variables
+(Production and Preview) and redeploy:
+
+```
+SMTP_HOST      = smtp.zoho.com        (smtppro.zoho.com for a paid organisation; smtp.zoho.eu for the EU data centre)
+SMTP_PORT      = 465
+SMTP_USER      = info@aurisnexus.co.za
+SMTP_PASSWORD  = <the app-specific password>
+```
+
+Recipient defaults to `info@aurisnexus.co.za` (`ENQUIRY_TO`). Safeguards: fixed recipient, visitor address only as Reply-To,
+5 enquiries per client per hour, honeypot field, input validation (no line breaks in headers), origin check, audit entries
+without visitor content, generic errors (no provider details). Visitor personal information is only emailed, not stored.

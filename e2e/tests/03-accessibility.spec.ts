@@ -32,6 +32,13 @@ test('sign-in page', async ({ page }) => {
   await scan(page, '/login');
 });
 
+test('sign-in page with the enquiry dialog open', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Send an enquiry' }).click();
+  await expect(page.getByRole('dialog', { name: 'Enquire about Nexus' })).toBeVisible();
+  await scan(page, '/login (enquiry dialog)');
+});
+
 test.describe('signed-in pages', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page, E2E.ownerEmail, E2E.ownerPassword);

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AppFooter } from '@/components/app-footer';
 import { BrandMark } from '@/components/brand-mark';
+import { EnquiryDialog } from '@/components/enquiry-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -223,15 +224,21 @@ export default function LoginPage() {
                 )}
               </CardContent>
             </Card>
-            <p className="text-center text-sm text-muted-foreground">
-              Interested in using Nexus for your practice?{' '}
-              <a
-                href={`mailto:${BRAND.enquiryEmail}`}
-                className="font-medium text-primary underline-offset-2 hover:underline"
-              >
-                {BRAND.enquiryEmail}
-              </a>
-            </p>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-sm text-muted-foreground">
+                Interested in using Nexus for your practice?
+              </p>
+              <EnquiryDialog />
+              <p className="text-xs text-muted-foreground">
+                or email{' '}
+                <a
+                  href={`mailto:${BRAND.enquiryEmail}`}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {BRAND.enquiryEmail}
+                </a>
+              </p>
+            </div>
           </div>
         </main>
         <AppFooter />

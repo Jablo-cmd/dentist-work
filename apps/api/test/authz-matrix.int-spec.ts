@@ -21,6 +21,8 @@ const PUBLIC = new Set([
   'GET /api/v1/health/ready',
   'POST /api/v1/auth/login',
   'POST /api/v1/auth/mfa/verify',
+  // Public enquiry form: fixed recipient, rate limited, origin checked, no data is readable through it (enquiries.int-spec.ts).
+  'POST /api/v1/enquiries',
 ]);
 /** Routes any signed-in user may call (no permission needed): identity and own-credential management. */
 const SELF_SERVICE = new Set([

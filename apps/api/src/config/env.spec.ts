@@ -168,3 +168,39 @@ describe('TRUST_PROXY_HOPS', () => {
     ).toBe(0);
   });
 });
+
+describe('enquiry email configuration', () => {
+  const smtp = {
+    SMTP_HOST: 'smtp.example.invalid',
+    SMTP_USER: 'u@example.invalid',
+    SMTP_PASSWORD: 'p',
+  };
+
+  it('is optional: without SMTP the form reports "unavailable" instead of failing boot', () => {
+    const env = loadEnv(valid);
+    expect(env.smtp).toBeNull();
+    expect(env.enquiryTo).toBe('info@aurisnexus.co.za');
+    expect(env.enquiryRateLimitPerHour).toBe(5);
+  });
+
+  it('requires host, user and password together, without echoing the password', () => {
+    expect(() => loadEnv({ ...valid, SMTP_HOST: 'smtp.example.invalid' })).toThrow(/SMTP_\*/);
+    try {
+      loadEnv({ ...valid, SMTP_PASSWORD: 'TOPSECRETPASSWORD' });
+      throw new Error('should have thrown');
+    } catch (e) {
+      expect((e as Error).message).not.toContain('TOPSECRETPASSWORD');
+    }
+  });
+
+  it('uses implicit TLS on 465 by default, defaults the sender to the SMTP user, and fixes the recipient', () => {
+    const env = loadEnv({ ...valid, ...smtp });
+    expect(env.smtp).toMatchObject({ port: 465, secure: true, from: 'u@example.invalid' });
+    const starttls = loadEnv({ ...valid, ...smtp, SMTP_PORT: '587' });
+    expect(starttls.smtp).toMatchObject({ port: 587, secure: false });
+    expect(loadEnv({ ...valid, ...smtp, ENQUIRY_TO: 'sales@example.invalid' }).enquiryTo).toBe(
+      'sales@example.invalid',
+    );
+    expect(() => loadEnv({ ...valid, ENQUIRY_TO: 'not-an-email' })).toThrow(EnvValidationError);
+  });
+});

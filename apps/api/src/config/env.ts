@@ -63,6 +63,19 @@ const baseSchema = z.object({
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(120),
   LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(10),
   SWAGGER_ENABLED: bool.optional(),
+  // Enquiry email (public form on the sign-in page). SMTP is all-or-nothing; unset = the form reports
+  // "unavailable" and points visitors at the address instead of silently dropping messages.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  /** Implicit TLS. Default: true on port 465. When false, STARTTLS is *required* (never plaintext). */
+  SMTP_SECURE: bool.optional(),
+  /** Fixed recipient. Never taken from a request. */
+  ENQUIRY_TO: z.string().email().default('info@aurisnexus.co.za'),
+  /** Envelope/From address; defaults to SMTP_USER. Must be a mailbox the SMTP account may send as. */
+  ENQUIRY_FROM: z.string().email().optional(),
+  ENQUIRY_RATE_LIMIT_PER_HOUR: z.coerce.number().int().min(1).default(5),
   // Private S3-compatible object storage (imaging). All-or-nothing; leave unset to disable imaging.
   STORAGE_ENDPOINT: z.string().url().optional(),
   STORAGE_REGION: z.string().min(1).optional(),
@@ -110,6 +123,17 @@ export type Env = {
   swaggerEnabled: boolean;
   rateLimitPerMinute: number;
   loginRateLimitPerMinute: number;
+  /** null = enquiry email not configured. */
+  smtp: {
+    host: string;
+    port: number;
+    secure: boolean;
+    user: string;
+    password: string;
+    from: string;
+  } | null;
+  enquiryTo: string;
+  enquiryRateLimitPerHour: number;
   /** null = object storage not configured (imaging disabled). */
   storage: StorageConfig | null;
   imagingMaxBytes: number;
@@ -164,6 +188,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     if (e.SWAGGER_ENABLED === true)
       problems.push('SWAGGER_ENABLED: must not be enabled in production without explicit review');
   }
+  const smtpVars = [e.SMTP_HOST, e.SMTP_USER, e.SMTP_PASSWORD];
+  const smtpSet = smtpVars.filter((v) => v !== undefined).length;
+  if (smtpSet > 0 && smtpSet < smtpVars.length)
+    problems.push('SMTP_*: SMTP_HOST, SMTP_USER and SMTP_PASSWORD must be set together');
   const storageVars = [
     e.STORAGE_BUCKET,
     e.STORAGE_REGION,
@@ -240,6 +268,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     swaggerEnabled: e.SWAGGER_ENABLED ?? !isProduction,
     rateLimitPerMinute: e.RATE_LIMIT_PER_MINUTE,
     loginRateLimitPerMinute: e.LOGIN_RATE_LIMIT_PER_MINUTE,
+    smtp:
+      smtpSet === smtpVars.length
+        ? {
+            host: e.SMTP_HOST!,
+            port: e.SMTP_PORT,
+            secure: e.SMTP_SECURE ?? e.SMTP_PORT === 465,
+            user: e.SMTP_USER!,
+            password: e.SMTP_PASSWORD!,
+            from: e.ENQUIRY_FROM ?? e.SMTP_USER!,
+          }
+        : null,
+    enquiryTo: e.ENQUIRY_TO,
+    enquiryRateLimitPerHour: e.ENQUIRY_RATE_LIMIT_PER_HOUR,
     imagingMaxBytes: e.IMAGING_MAX_BYTES,
     scanner: e.SCANNER_HOST
       ? { host: e.SCANNER_HOST, port: e.SCANNER_PORT, timeoutMs: e.SCANNER_TIMEOUT_MS }

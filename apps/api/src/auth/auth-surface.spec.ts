@@ -31,12 +31,21 @@ describe('authentication attack surface', () => {
     ).toEqual(['/auth/session.service.ts']);
   });
 
-  it('only login, MFA verification and health checks are reachable without a session', () => {
+  it('only login, MFA verification, health checks and the public enquiry form are reachable without a session', () => {
     const publicFiles = files
       .filter((f) => /@Public\(\)/.test(read(f)))
       .map((f) => f.replace(root, ''))
       .sort();
-    expect(publicFiles).toEqual(['/auth/auth.controller.ts', '/health/health.controller.ts']);
+    expect(publicFiles).toEqual([
+      '/auth/auth.controller.ts',
+      '/enquiries/enquiries.controller.ts',
+      '/health/health.controller.ts',
+    ]);
+    // The enquiry controller exposes exactly one public route: POST /enquiries (rate limited, fixed recipient).
+    const enquiries = read(join(root, 'enquiries/enquiries.controller.ts'));
+    expect((enquiries.match(/@Public\(\)/g) ?? []).length).toBe(1);
+    expect(enquiries).toMatch(/@Public\(\)\s*\n\s*@Post\(\)/);
+    expect(/@(Get|Put|Patch|Delete)\(/.test(enquiries)).toBe(false);
     const authPublic = (
       read(join(root, 'auth/auth.controller.ts')).match(/@Public\(\)\s*\n\s*@Post\('([^']+)'\)/g) ??
       []
