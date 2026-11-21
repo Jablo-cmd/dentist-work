@@ -74,7 +74,7 @@ reachable (protected by lockout, rate limiting and mandatory MFA). The Vercel-ge
 
 ## Enquiry email (sign-in page form)
 
-The form is built and tested; **it sends nothing until SMTP credentials are added**, and until then it tells visitors to email
+The form is built and tested. **SMTP credentials were added to Vercel on 2026-11-21** (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `ENQUIRY_FROM`, `ENQUIRY_TO`; password stored as a sensitive variable). Without them the form tells visitors to email
 `info@aurisnexus.co.za` directly. To enable: in Zoho Mail create an _app-specific password_ for the sending mailbox (My Account →
 Security → App Passwords; SMTP access must be enabled), then add to Vercel project `nexus-dpms-api` as **sensitive** variables
 (Production and Preview) and redeploy:
