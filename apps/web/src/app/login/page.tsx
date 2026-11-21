@@ -223,6 +223,15 @@ export default function LoginPage() {
                 )}
               </CardContent>
             </Card>
+            <p className="text-center text-sm text-muted-foreground">
+              Interested in using Nexus for your practice?{' '}
+              <a
+                href={`mailto:${BRAND.enquiryEmail}`}
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                {BRAND.enquiryEmail}
+              </a>
+            </p>
           </div>
         </main>
         <AppFooter />

@@ -6,6 +6,8 @@ export const BRAND = {
   /** The full product name: browser title, footer, authenticator label, API docs. */
   fullName: 'Nexus Dental Practice Management System',
   punchline: 'Better care. Smarter practice.',
+  /** Where prospective customers are sent to enquire (Auris Nexus Technologies). */
+  enquiryEmail: 'info@aurisnexus.co.za',
 } as const;
 
 export const ROLE_LABEL: Record<string, string> = {

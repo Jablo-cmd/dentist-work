@@ -21,6 +21,13 @@ test('brand: sign-in shows the product identity and the official punchline', asy
   await expect(page.getByRole('contentinfo')).toContainText(PUNCHLINE);
 });
 
+test('sign-in page sends enquiries to info@aurisnexus.co.za', async ({ page }) => {
+  await page.goto('/login');
+  const link = page.getByRole('link', { name: 'info@aurisnexus.co.za' });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', 'mailto:info@aurisnexus.co.za');
+});
+
 test('brand: the official punchline is in the footer of every authenticated page', async ({
   page,
 }) => {
